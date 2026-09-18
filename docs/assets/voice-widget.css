@@ -1,0 +1,17 @@
+.voice-widget-bar {
+  margin-top: 0.5em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.voice-widget-bar button {
+  cursor: pointer;
+  padding: 0.3em 0.7em;
+  border-radius: 0.3em;
+  border: 1px solid var(--md-default-fg-color--lighter, #ccc);
+  background: var(--md-default-bg-color, #fff);
+}
+.voice-widget-result {
+  font-style: italic;
+  opacity: 0.8;
+}

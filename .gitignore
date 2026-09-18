@@ -167,6 +167,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# TTS voice model weights — fetched by scripts/fetch-tts-assets.sh, not committed
+docs/assets/tts/
+
 # mypy
 .mypy_cache/
 .dmypy.json
