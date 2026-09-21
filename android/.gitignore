@@ -1,0 +1,33 @@
+# IDE (Android Studio / IntelliJ) — machine-local workspace state, not
+# shared config. Ignore the whole directory rather than chasing individual
+# filenames each new AS version adds (deploymentTargetDropDown.xml etc.).
+*.iml
+/.idea
+
+# Gradle
+.gradle
+/build
+app/build
+local.properties
+
+# Kotlin build-tool session cache (Kotlin 2.x)
+.kotlin
+
+# Native build (unused here, harmless to keep in case NDK/CMake gets added)
+.externalNativeBuild
+.cxx
+
+# Studio profiler recordings, heap dumps
+/captures
+*.hprof
+
+# Signing material — never commit real keys
+*.jks
+*.keystore
+key.properties
+
+.DS_Store
+
+# Reconstructed litertlm-android AAR (large binary, machine-local workaround
+# for a network gap — see settings.gradle.kts). Not source, not for git.
+/local-repo

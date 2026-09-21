@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>SOS Relay · Location map preview</title>
+  <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/sos-map.css">
+  <script defer src="../assets/leaflet/leaflet.js"></script>
+  <script defer src="../assets/sos-map.js"></script>
+</head>
+<body>
+  <header><a class="brand" href="../"><span class="brand-icon" aria-hidden="true">✳</span> SOS RELAY</a><span class="header-caption">A place to make help visible.</span><a href="../doors.2026-09/">Connection guide ↗</a></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">PUBLIC LOCATION MAP / DESIGN PREVIEW</p><h1>Put the need on the map.</h1><p>Choose an exact location. Describe what help is needed.</p></div><span class="demo-badge">Local test · not monitored</span></div>
+    <div class="demo-notice"><strong>No SOS messages are sent from this preview.</strong> Test messages are saved to the local genone.db database and remain after reload. Do not enter real emergency or personal information.</div>
+    <div class="workspace">
+      <section class="map-panel" aria-label="Location map">
+        <div class="map-toolbar"><span><i class="status-dot"></i> Explore the map</span><button id="center-pin" type="button">Select map center</button></div>
+        <div id="map" aria-label="Interactive map. Pan and zoom, then select map center or click a location."></div>
+        <p id="tile-status" class="map-note" role="status">Loading map… You can also enter coordinates in the form.</p>
+        <div class="map-footer"><span><i class="legend-pin"></i> Your selected location</span><span>Full precision · no location blurring</span></div>
+      </section>
+      <section class="composer" aria-labelledby="form-title">
+        <p class="eyebrow">NEW TEST SIGNAL</p><h2 id="form-title">Where is help needed?</h2>
+        <form id="signal-form">
+          <fieldset><legend><span class="step">1</span> Choose the location</legend><p class="hint">Tap the map, drag the pin, or enter coordinates.</p><div class="coordinates"><label>Latitude<input id="latitude" type="number" min="-90" max="90" step="any" placeholder="−90 to 90" required></label><label>Longitude<input id="longitude" type="number" min="-180" max="180" step="any" placeholder="−180 to 180" required></label></div><button id="use-coordinates" class="text-button" type="button">Show these coordinates on map →</button></fieldset>
+          <fieldset><legend><span class="step">2</span> Describe the situation</legend><label for="message" class="hint">What happened? What kind of help is needed?</label><textarea id="message" rows="4" maxlength="600" placeholder="For example: Two people stranded on the trail. Need drinking water and help reaching the road." required></textarea><div class="counter"><span>Keep identifying details out unless intended.</span><span id="character-count">0 / 600</span></div></fieldset>
+          <fieldset><legend><span class="step">3</span> Choose what to share</legend><label class="check"><input id="share-contact" type="checkbox"> Include public contact information</label><p class="hint">Anonymous by default. No account or device ID requested.</p><label id="contact-label" hidden>Public contact (optional)<input id="contact" type="text" maxlength="200" autocomplete="off" disabled placeholder="A way for people to reach you"></label></fieldset>
+          <div class="disclosure"><strong>Before a real SOS is published</strong><p>Everyone could see the exact location, message and timestamp, plus any contact details you choose to include. Publication would be immediate after the location check.</p><p>This tool does not hide your network connection. Your ISP or network observer can see that you connected unless you already use a suitable <a href="../doors.2026-09/">circumvention tool</a>.</p><p>Map tiles come from OpenStreetMap, which receives your network address and the map areas requested. This local test stores your location, message, timestamp and opted-in contact in genone.db. It does not store a sender IP or device ID. Public-host logging has not been verified.</p></div>
+          <p class="property-note"><strong>Location check is not connected in this demo.</strong> The live service will use OpenStreetMap buildings and residential, commercial and industrial areas as approximate restrictions. Missing or incorrect data can cause mistakes; this is not proof of ownership or a legal guarantee.</p>
+          <button class="submit" type="submit">Save test message <span aria-hidden="true">↗</span></button><p id="form-status" role="status" tabindex="-1"></p>
+        </form>
+      </section>
+      <section class="signals" aria-labelledby="signals-title"><div class="signals-heading"><h2 id="signals-title">Saved test messages <span id="signal-count">0</span></h2><button id="reload-signals" type="button">Reload saved messages</button></div><p id="empty-state">Loading saved messages…</p><ul id="signal-list"></ul></section>
+    </div>
+    <footer>Public by design. Anonymous by default.<span>Preview only · no rescue dispatch or delivery</span></footer>
+  </main>
+  <noscript>This map needs JavaScript. This preview cannot send an SOS.</noscript>
+</body>
+</html>

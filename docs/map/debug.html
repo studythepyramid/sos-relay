@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOS map — debug view</title>
+  <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/sos-map.css">
+  <script defer src="../assets/leaflet/leaflet.js"></script>
+  <script defer src="../assets/sos-map.js"></script>
+  <style>
+    /* Debug-only: not the real page (docs/map/index.html has the actual
+       safety/transparency disclosures) — this exists purely to fit map +
+       form on one phone screen for screenshot-based debugging. */
+    body { margin: 0; }
+    header, .heading, .demo-notice, .disclosure, .property-note, footer { display: none !important; }
+    #map { height: 45vh !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="workspace">
+      <section class="map-panel" aria-label="Location map">
+        <div class="map-toolbar"><span><i class="status-dot"></i> Explore the map</span><button id="center-pin" type="button">Select map center</button></div>
+        <div id="map" aria-label="Interactive map"></div>
+        <p id="tile-status" class="map-note" role="status">Loading map…</p>
+      </section>
+      <section class="composer" aria-labelledby="form-title">
+        <h2 id="form-title">DEBUG</h2>
+        <form id="signal-form">
+          <div class="coordinates"><label>Lat<input id="latitude" type="number" min="-90" max="90" step="any" required></label><label>Lng<input id="longitude" type="number" min="-180" max="180" step="any" required></label></div>
+          <button id="use-coordinates" class="text-button" type="button">Show on map</button>
+          <textarea id="message" rows="2" maxlength="600" placeholder="test message" required></textarea>
+          <span id="character-count">0 / 600</span>
+          <label class="check"><input id="share-contact" type="checkbox"> contact</label>
+          <label id="contact-label" hidden>Contact<input id="contact" type="text" maxlength="200" disabled></label>
+          <button class="submit" type="submit">Save</button>
+          <p id="form-status" role="status" tabindex="-1"></p>
+        </form>
+      </section>
+      <section class="signals" aria-labelledby="signals-title"><h2 id="signals-title">Saved <span id="signal-count">0</span></h2><button id="reload-signals" type="button">Reload</button><p id="empty-state"></p><ul id="signal-list"></ul></section>
+    </div>
+  </main>
+  <noscript>Needs JavaScript.</noscript>
+</body>
+</html>

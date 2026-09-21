@@ -51,8 +51,18 @@ markdown_extensions:
       permalink: true
 
 nav:
+  # index.md or index.html should be script generated
+  # list the contents of folder, group sub-folder together
   - Home: index.md
+  - SOS map (preview): map/index.html
+
+  # Categories is more important for me
+  #
+  # about.md should be left along for user editing
   - About: about.md
+
+  - Doors to the real Internet: doors.2026-09.md
+
   - Voice samples:
       - English: samples/tts-stt-en.md
       - Chinese: samples/tts-stt-cn.md
