@@ -170,6 +170,10 @@ venv.bak/
 # TTS voice model weights — fetched by scripts/fetch-tts-assets.sh, not committed
 docs/assets/tts/
 
+# Local-only test symlinks into personal ~/my/* content — never real site
+# content, never committed. Symlink whatever you're testing under here.
+docs/_local/
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -219,3 +223,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local scratch folder — never committed
+/tmp/
