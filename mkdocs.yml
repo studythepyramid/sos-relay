@@ -54,7 +54,6 @@ nav:
   # index.md or index.html should be script generated
   # list the contents of folder, group sub-folder together
   - Home: index.md
-  - SOS map (preview): map/index.html
 
   # Categories is more important for me
   #
