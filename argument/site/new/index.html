@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Start a thread</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  body{margin:0;font-family:'JetBrains Mono',monospace;background:#0b0e0c;color:#cfe3d3}
+  ::selection{background:#2c4a37;color:#eafaf0}
+</style>
+</head>
+<body>
+<div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
+
+  <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a">
+    <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument/new</div>
+  </div>
+
+  <div style="flex:1 1 auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+
+    <div style="font-size:14px;line-height:1.6;color:#8fa593">
+      Start a thread. Give it something checkable — a claim with facts, a source, a mechanism. Others will support it, attack it, or add noise; a claim that can't be attacked usually isn't saying much.
+    </div>
+
+    <div>
+      <label for="new-title" style="display:block;font-size:13px;color:#5f7268;margin-bottom:6px">title</label>
+      <input id="new-title" placeholder="auto-fills from the claim below, or type your own" style="width:100%;box-sizing:border-box;background:#121712;border:1px solid #23302a;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:15px;color:#eafaf0;outline:none">
+    </div>
+
+    <div style="flex:1 1 auto;display:flex;flex-direction:column">
+      <label for="new-claim" style="display:block;font-size:13px;color:#5f7268;margin-bottom:6px">claim</label>
+      <textarea id="new-claim" rows="6" placeholder="State the claim itself, in a sentence or two. What's the evidence, and where's it from?" style="flex:1 1 auto;width:100%;box-sizing:border-box;background:#121712;border:1px solid #23302a;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:15px;color:#eafaf0;outline:none;resize:none;line-height:1.5"></textarea>
+    </div>
+
+    <div id="error" style="display:none;font-size:13px;color:#e5707a"></div>
+
+  </div>
+
+  <div style="border-top:1px solid #23302a;padding:16px 20px;display:flex;justify-content:flex-end">
+    <button id="submit" style="background:#152019;border:1px solid #2c4a37;color:#7bd88f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;padding:10px 18px;border-radius:3px;cursor:pointer">start thread</button>
+  </div>
+
+</div>
+<script>
+(function () {
+  function token() {
+    var k = 'argument_token';
+    var t = localStorage.getItem(k);
+    if (!t) { t = crypto.randomUUID(); localStorage.setItem(k, t); }
+    return t;
+  }
+
+  var title = document.getElementById('new-title');
+  var claim = document.getElementById('new-claim');
+  var titleTouched = false;
+
+  title.addEventListener('input', function () { titleTouched = true; });
+  claim.addEventListener('input', function () {
+    if (titleTouched) return;
+    var words = claim.value.trim().split(/\s+/).filter(Boolean).slice(0, 3);
+    title.value = words.join(' ');
+  });
+
+  document.getElementById('submit').addEventListener('click', function () {
+    var errorEl = document.getElementById('error');
+    errorEl.style.display = 'none';
+    fetch('/api/argument', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Argument-Token': token() },
+      body: JSON.stringify({ title: title.value.trim(), body: claim.value.trim() }),
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, j: j }; });
+    }).then(function (res) {
+      if (res.ok) {
+        location.href = '/argument/' + res.j.slug + '/';
+      } else {
+        errorEl.textContent = res.j.error || 'Failed to start thread';
+        errorEl.style.display = 'block';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

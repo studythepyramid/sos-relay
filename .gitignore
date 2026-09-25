@@ -226,3 +226,10 @@ __marimo__/
 
 # Local scratch folder — never committed
 /tmp/
+
+# Argument subsystem — Node deps and generated static output (see
+# argument/design.md's "Repo layout & deployment"); genone.db itself
+# already covered by the /var rule above.
+argument/node_modules/
+argument/site/*
+!argument/site/new/

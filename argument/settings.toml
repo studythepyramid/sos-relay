@@ -1,0 +1,5 @@
+# Argument subsystem settings. Path below is relative to the repo root
+# (resolved from this file's own location, not from process.cwd(), so it
+# doesn't depend on how the service happens to be launched).
+db_file = "var/genone.db"
+port = 8000
