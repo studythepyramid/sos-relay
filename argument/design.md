@@ -185,6 +185,39 @@ edge: {
   and accepted at this list size; not worth solving yet. Accepted MVP
   limitation: clearing localStorage or switching devices loses "ownership"
   of past posts permanently, with no recovery path.
+- **Registering a display name and avatar** (built 2026-09-26): the
+  `argument_identity` table (`token`, `display_name`) lets a token attach
+  a real name via `/user/` — not a login (no password, no session; the
+  server still never verifies the token, it only stores what's attached
+  to it), just metadata on the same silent token every visitor already
+  holds. `resolveLabel(token)` returns the registered name if one exists,
+  else `anonymous-<word-list-label>` — the `anonymous-` prefix makes
+  registered vs. unregistered posters visually distinguishable at a
+  glance. **Not retroactive**: the label is baked into `author_label` at
+  post time, so registering a name only changes future posts; making it
+  retroactive would mean regenerating every thread a token has ever
+  touched on every name change, real complexity for cosmetic benefit.
+  Avatar is a deterministic identicon (`src/identicon.js`, sha256(token)
+  → a 5×5 mirrored colored grid) — no upload, no storage, same
+  zero-friction shape as the word-list label, generated server-side and
+  reused identically by both the rendered pages and the `/api/user`
+  profile preview (single source of truth, not duplicated in client JS).
+  **A stronger identity is possible later**: the browser's Web Crypto API
+  (`crypto.subtle`) can generate a real, non-extractable asymmetric
+  keypair — the private key becomes physically unreadable by any page
+  JS (stored as a live `CryptoKey` in IndexedDB, not a plain string in
+  localStorage), writes get signed client-side and verified server-side
+  with Node's matching `crypto.webcrypto`, and the public key *becomes*
+  the identity, no separate token at all — genuinely closer to
+  unphishable than a bearer token. It does **not** solve losing your
+  identity on a cleared browser or a new device, though — that's
+  identical under either scheme, since the secret lives in exactly one
+  browser either way; solving that would need an exportable/backed-up
+  key, which trades away the non-extractability that's the whole
+  benefit. Treated as a separate future phase since it's an upgrade to
+  *how* the token is established, not to what sits on top of it — the
+  `argument_identity.token` column would just start holding a public key
+  instead of a random string, with everything else unchanged.
 - **Quota**: a fixed default (e.g. 10MB) per identity, enforced at write
   time against `argument_*` row sizes for that owner. Paid upsizing is a
   **separate sub-system** (billing, compliance) — do not let it block or
@@ -364,6 +397,17 @@ sosweb.org {
 
     @argument_api path /api/argument /api/argument/*
     handle @argument_api {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    @user path /user /user/*
+    handle @user {
+        root * /opt/sos-relay/argument/site
+        file_server
+    }
+
+    @user_api path /api/user
+    handle @user_api {
         reverse_proxy 127.0.0.1:8000
     }
 

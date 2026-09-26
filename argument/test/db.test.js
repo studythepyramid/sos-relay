@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   initialize, createArgument, addReply, getArgument, listArguments,
-  labelForToken, classifyRelation, closeAll,
+  labelForToken, classifyRelation, resolveLabel, getIdentity, setDisplayName,
+  closeAll,
 } from '../src/db.js';
 
 function tempDb() {
@@ -85,5 +86,54 @@ test('addReply rejects an unknown parent node', () => {
   initialize(dbFile);
   const a = createArgument(dbFile, { title: 'Thread', body: 'Claim', ownerToken: 'owner-a' });
   assert.throws(() => addReply(dbFile, { slug: a.slug, toNodeId: 999999, body: 'x', authorToken: 't' }));
+  closeAll();
+});
+
+test('resolveLabel falls back to an anonymous- prefixed word-list label', () => {
+  const dbFile = tempDb();
+  initialize(dbFile);
+  const label = resolveLabel(dbFile, 'unregistered-token');
+  assert.match(label, /^anonymous-/);
+  assert.equal(label, `anonymous-${labelForToken('unregistered-token')}`);
+  closeAll();
+});
+
+test('setDisplayName registers a name, resolveLabel then uses it without the prefix', () => {
+  const dbFile = tempDb();
+  initialize(dbFile);
+  assert.equal(getIdentity(dbFile, 'tok-1'), null);
+
+  const identity = setDisplayName(dbFile, 'tok-1', '  Ada  ');
+  assert.equal(identity.display_name, 'Ada'); // trimmed
+  assert.equal(resolveLabel(dbFile, 'tok-1'), 'Ada');
+
+  // Update, not a second row
+  setDisplayName(dbFile, 'tok-1', 'Ada Lovelace');
+  assert.equal(getIdentity(dbFile, 'tok-1').display_name, 'Ada Lovelace');
+  closeAll();
+});
+
+test('setDisplayName rejects empty or too-long names', () => {
+  const dbFile = tempDb();
+  initialize(dbFile);
+  assert.throws(() => setDisplayName(dbFile, 'tok-2', '   '));
+  assert.throws(() => setDisplayName(dbFile, 'tok-2', 'x'.repeat(41)));
+  closeAll();
+});
+
+test('registering a name is not retroactive — past posts keep their old label', () => {
+  const dbFile = tempDb();
+  initialize(dbFile);
+  const a = createArgument(dbFile, { title: 'Thread', body: 'Claim', ownerToken: 'tok-3' });
+  const before = getArgument(dbFile, a.slug).nodes[0].author_label;
+  assert.match(before, /^anonymous-/);
+
+  setDisplayName(dbFile, 'tok-3', 'Later Name');
+  const stillOld = getArgument(dbFile, a.slug).nodes[0].author_label;
+  assert.equal(stillOld, before); // unchanged
+
+  const reply = addReply(dbFile, { slug: a.slug, toNodeId: getArgument(dbFile, a.slug).nodes[0].id, body: 'A fresh reply after registering.', authorToken: 'tok-3' });
+  const after = getArgument(dbFile, a.slug).nodes.find((n) => n.id === reply.nodeId);
+  assert.equal(after.author_label, 'Later Name'); // new posts use it
   closeAll();
 });

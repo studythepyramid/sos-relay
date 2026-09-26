@@ -7,6 +7,9 @@ import { writeFileSync, renameSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { siteDir } from './settings.js';
 import { listArguments, getArgument } from './db.js';
+import { identicon } from './identicon.js';
+
+const PROFILE_LINK = '<a href="/user/" style="font-size:13px;color:#5f8a6e;text-decoration:none">[ set your name ]</a>';
 
 const FONT_LINK =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
@@ -87,7 +90,10 @@ function nodeBlock(node, nodesById, rootNodeId) {
     ? `\n      <div style="margin-top:3px;font-size:13px;color:#4a6155">↳ replying to <span style="color:#7f9186">${escapeHtml(parent.author_label)}</span>: "${escapeHtml(snippet(parent.body, 50))}"</div>`
     : '';
   return `    <div${dim} data-node-id="${node.id}">
-      <div style="font-size:16px;color:#5f7268">[${formatClock(node.created_at)}] &lt;${escapeHtml(node.author_label)}&gt; ${tag}</div>${backlink}
+      <div style="display:flex;align-items:center;gap:8px">
+        ${identicon(node.author_token)}
+        <div style="font-size:16px;color:#5f7268">[${formatClock(node.created_at)}] &lt;${escapeHtml(node.author_label)}&gt; ${tag}</div>
+      </div>${backlink}
       <div style="margin-top:3px;font-size:17px;line-height:1.55">&gt; ${escapeHtml(node.body)}</div>
       <button type="button" class="reply-btn" data-to="${node.id}" data-label="${escapeHtml(node.author_label)}" data-snippet="${escapeHtml(snippet(node.body))}">[ reply ]</button>
     </div>`;
@@ -102,9 +108,12 @@ export function renderThread(argumentRow) {
   const body = `<x-dc-root style="display:block;min-height:100vh">
 <div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
 
-  <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a">
-    <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument/${escapeHtml(argumentRow.slug)}</div>
-    <div style="margin-top:6px;font-size:20px;font-weight:700;color:#eafaf0;line-height:1.4">${rootTitle}</div>
+  <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div>
+      <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument/${escapeHtml(argumentRow.slug)}</div>
+      <div style="margin-top:6px;font-size:20px;font-weight:700;color:#eafaf0;line-height:1.4">${rootTitle}</div>
+    </div>
+    ${PROFILE_LINK}
   </div>
 
   <div style="margin:14px 20px 0;padding:12px 14px;border:1px dashed #2c4a37">
@@ -192,7 +201,10 @@ export function renderList(rows) {
         <div style="font-size:17px;font-weight:700;color:#eafaf0;line-height:1.4">${escapeHtml(row.title)}</div>
       </a>
       <div style="margin-top:5px;font-size:14px;color:#7f9186;line-height:1.5">${escapeHtml((row.excerpt ?? '').slice(0, 140))}</div>
-      <div style="margin-top:8px;font-size:13px;color:#5f7268">owner <span style="color:#a7bcab">${escapeHtml(row.owner_label ?? '')}</span> · ${row.participants} participant${row.participants === 1 ? '' : 's'} · last reply ${relativeTime(row.last_activity)}</div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:13px;color:#5f7268">
+        ${identicon(row.owner_token, 18)}
+        owner <span style="color:#a7bcab">${escapeHtml(row.owner_label ?? '')}</span> · ${row.participants} participant${row.participants === 1 ? '' : 's'} · last reply ${relativeTime(row.last_activity)}
+      </div>
     </div>`).join('\n\n');
   const body = `<div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
 
@@ -201,7 +213,10 @@ export function renderList(rows) {
       <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument</div>
       <div style="margin-top:4px;font-size:13px;color:#4a6155">${rows.length} thread${rows.length === 1 ? '' : 's'}</div>
     </div>
-    <a href="/argument/new" style="font-size:14px;color:#7bd88f;text-decoration:none;font-weight:700">[ + start new ]</a>
+    <div style="display:flex;gap:14px;align-items:baseline">
+      ${PROFILE_LINK}
+      <a href="/argument/new" style="font-size:14px;color:#7bd88f;text-decoration:none;font-weight:700">[ + start new ]</a>
+    </div>
   </div>
 
   <div style="flex:1 1 auto;padding:0 20px">

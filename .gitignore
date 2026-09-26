@@ -233,3 +233,4 @@ __marimo__/
 argument/node_modules/
 argument/site/*
 !argument/site/new/
+!argument/site/user/
