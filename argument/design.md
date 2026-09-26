@@ -353,20 +353,45 @@ silently wipe any argument pages living inside it:
 
 ```
 sosweb.org {
-    handle_path /argument/* {
+    redir /argument /argument/ 308
+
+    @argument path /argument/*
+    handle @argument {
+        uri strip_prefix /argument
         root * /opt/sos-relay/argument/site
         file_server
     }
-    handle_path /api/argument/* {
+
+    @argument_api path /api/argument /api/argument/*
+    handle @argument_api {
         reverse_proxy 127.0.0.1:8000
     }
+
     handle {
         root * /opt/sos-relay/site
         file_server
     }
+
     encode gzip
 }
 ```
+
+**Deployed and corrected 2026-09-26**: `handle_path` only ever takes one
+path pattern, not several — an earlier version of this block used
+`handle_path /argument/* { ... }`, which is why a *bare* `/argument` or
+`/api/argument` (no trailing slash — exactly what the "create a thread"
+client request sends) silently 404'd in production, falling through to
+the static-site catch-all. Fixed with a named matcher (`@argument`,
+which *can* take multiple patterns) plus an explicit `uri strip_prefix`,
+since plain `handle` (unlike `handle_path`) doesn't auto-strip the
+matched prefix. The API block lists both `/api/argument` and
+`/api/argument/*` directly rather than stripping, since Express expects
+the full `/api/argument...` path as-is. Caught by testing the exact
+"create a thread" request against the live site right after deploying,
+not by local testing alone (`npm start`'s Express server has none of
+this Caddy-prefix behavior, so this class of bug is invisible until
+something Caddy-shaped is in the loop) — worth remembering for future
+route changes.
 
 Generated layout: `argument/site/<slug>/index.html` per thread,
 `argument/site/index.html` for the list page. The "start an argument"
