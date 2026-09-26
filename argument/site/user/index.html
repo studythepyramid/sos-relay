@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your name</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  body{margin:0;font-family:'JetBrains Mono',monospace;background:#0b0e0c;color:#cfe3d3}
+  ::selection{background:#2c4a37;color:#eafaf0}
+  a{color:#7bd88f}
+</style>
+</head>
+<body>
+<div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
+
+  <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a">
+    <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/user</div>
+    <div style="margin-top:6px;font-size:20px;font-weight:700;color:#eafaf0">Your name on this board</div>
+  </div>
+
+  <div style="flex:1 1 auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px">
+
+    <div style="font-size:14px;line-height:1.6;color:#8fa593">
+      This isn't a login — nothing to remember, no password. It just attaches a
+      name to the anonymous id your browser already holds, so future posts show
+      it instead of an auto-generated label. Posts you've already made keep
+      whatever they showed at the time.
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #23302a">
+      <div id="avatar-preview" style="width:56px;height:56px;flex-shrink:0"></div>
+      <div>
+        <div style="font-size:13px;color:#5f7268">currently posting as</div>
+        <div id="current-name" style="margin-top:2px;font-size:17px;color:#eafaf0">loading…</div>
+      </div>
+    </div>
+
+    <div>
+      <label for="name-input" style="display:block;font-size:13px;color:#5f7268;margin-bottom:6px">set your name</label>
+      <div style="display:flex;gap:10px">
+        <input id="name-input" maxlength="40" placeholder="pick a name (up to 40 characters)" style="flex:1 1 auto;box-sizing:border-box;background:#121712;border:1px solid #23302a;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:15px;color:#eafaf0;outline:none">
+        <button id="save" style="background:#152019;border:1px solid #2c4a37;color:#7bd88f;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;padding:10px 18px;border-radius:3px;cursor:pointer">save</button>
+      </div>
+    </div>
+
+    <div id="error" style="display:none;font-size:13px;color:#e5707a"></div>
+    <div id="saved" style="display:none;font-size:13px;color:#7bd88f">Saved.</div>
+
+    <div style="margin-top:8px"><a href="/argument/" style="font-size:14px;text-decoration:none">← back to arguments</a></div>
+
+  </div>
+
+</div>
+<script>
+(function () {
+  function token() {
+    var k = 'argument_token';
+    var t = localStorage.getItem(k);
+    if (!t) { t = crypto.randomUUID(); localStorage.setItem(k, t); }
+    return t;
+  }
+
+  var currentName = document.getElementById('current-name');
+  var avatarPreview = document.getElementById('avatar-preview');
+  var nameInput = document.getElementById('name-input');
+  var errorEl = document.getElementById('error');
+  var savedEl = document.getElementById('saved');
+
+  function render(profile) {
+    currentName.textContent = profile.displayName || '(not set — showing an auto-generated label)';
+    avatarPreview.innerHTML = profile.avatarSvg;
+    if (profile.displayName) nameInput.value = profile.displayName;
+  }
+
+  fetch('/api/user', { headers: { 'X-Argument-Token': token() } })
+    .then(function (r) { return r.json(); })
+    .then(render);
+
+  document.getElementById('save').addEventListener('click', function () {
+    errorEl.style.display = 'none';
+    savedEl.style.display = 'none';
+    var name = nameInput.value.trim();
+    if (!name) return;
+    fetch('/api/user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Argument-Token': token() },
+      body: JSON.stringify({ displayName: name }),
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, j: j }; });
+    }).then(function (res) {
+      if (res.ok) {
+        render(res.j);
+        savedEl.style.display = 'block';
+      } else {
+        errorEl.textContent = res.j.error || 'Failed to save';
+        errorEl.style.display = 'block';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

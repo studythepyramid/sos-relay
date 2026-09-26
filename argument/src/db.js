@@ -25,6 +25,52 @@ export function labelForToken(token) {
   return WORDLIST[hash.readUInt32BE(0) % WORDLIST.length];
 }
 
+// The label actually stored on a node at post time: a registered
+// display_name (argument_identity) if the token has one, else the
+// deterministic word-list label prefixed "anonymous-" so registered and
+// unregistered posters are visually distinguishable in the thread. Not
+// retroactive — see argument/design.md's identity notes: registering a
+// name only changes future posts, not ones already made.
+export function resolveLabel(dbFile, token) {
+  const db = connect(dbFile);
+  const row = db.prepare(
+    'SELECT display_name FROM argument_identity WHERE token = ?'
+  ).get(token);
+  if (row && row.display_name) return row.display_name;
+  return `anonymous-${labelForToken(token)}`;
+}
+
+export function getIdentity(dbFile = DEFAULT_PATH, token) {
+  const db = connect(dbFile);
+  return db.prepare(
+    'SELECT token, display_name, created_at, updated_at FROM argument_identity WHERE token = ?'
+  ).get(token) ?? null;
+}
+
+// Upsert-by-token, no uniqueness check on the name itself (two people
+// can share a display_name — identity binds to the token, not the
+// string; see argument/design.md's identity notes for why that's
+// deliberate, not an oversight).
+export function setDisplayName(dbFile = DEFAULT_PATH, token, displayName) {
+  if (typeof token !== 'string' || !token.trim()) throw new Error('Token is required');
+  const name = typeof displayName === 'string' ? displayName.trim() : '';
+  if (!name) throw new Error('Display name is required');
+  if (name.length > 40) throw new Error('Display name must be 40 characters or fewer');
+
+  const db = connect(dbFile);
+  const now = new Date().toISOString();
+  const existing = db.prepare('SELECT token FROM argument_identity WHERE token = ?').get(token);
+  if (existing) {
+    db.prepare('UPDATE argument_identity SET display_name = ?, updated_at = ? WHERE token = ?')
+      .run(name, now, token);
+  } else {
+    db.prepare(
+      'INSERT INTO argument_identity (token, display_name, created_at, updated_at) VALUES (?, ?, ?, ?)'
+    ).run(token, name, now, now);
+  }
+  return getIdentity(dbFile, token);
+}
+
 // Placeholder classifier, standing in for the real AI classifier (Phase 3
 // of argument/design.md's roadmap). Zero semantic meaning — its only job
 // right now is wiring the pipeline (post -> classify -> render -> tag)
@@ -100,6 +146,22 @@ export function initialize(dbFile = DEFAULT_PATH) {
     db.prepare("INSERT INTO schema_migrations VALUES ('argument', 1, ?)")
       .run(new Date().toISOString());
   }
+
+  const appliedV2 = db.prepare(
+    "SELECT 1 FROM schema_migrations WHERE component = 'argument' AND version = 2"
+  ).get();
+  if (!appliedV2) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS argument_identity (
+        token TEXT PRIMARY KEY,
+        display_name TEXT NOT NULL CHECK(length(trim(display_name)) BETWEEN 1 AND 40),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+    db.prepare("INSERT INTO schema_migrations VALUES ('argument', 2, ?)")
+      .run(new Date().toISOString());
+  }
   return db;
 }
 
@@ -152,7 +214,7 @@ export function createArgument(dbFile = DEFAULT_PATH, { title, body, ownerToken 
     }
   }
 
-  const label = labelForToken(ownerToken);
+  const label = resolveLabel(dbFile, ownerToken);
   const nodeInfo = db.prepare(
     `INSERT INTO argument_node (argument_id, author_token, author_label, body, node_type, created_at)
      VALUES (?, ?, ?, ?, 'claim', ?)`
@@ -180,7 +242,7 @@ export function addReply(dbFile = DEFAULT_PATH, { slug, toNodeId, body, authorTo
   if (!parent) throw new Error('Parent node not found in this argument');
 
   const now = new Date().toISOString();
-  const label = labelForToken(authorToken);
+  const label = resolveLabel(dbFile, authorToken);
   const nodeInfo = db.prepare(
     `INSERT INTO argument_node (argument_id, author_token, author_label, body, node_type, created_at)
      VALUES (?, ?, ?, ?, 'claim', ?)`
@@ -204,7 +266,7 @@ export function getArgument(dbFile = DEFAULT_PATH, slug) {
   const argumentRow = db.prepare('SELECT * FROM argument WHERE slug = ?').get(slug);
   if (!argumentRow) return null;
   const nodes = db.prepare(`
-    SELECT n.id, n.author_label, n.body, n.node_type, n.created_at,
+    SELECT n.id, n.author_token, n.author_label, n.body, n.node_type, n.created_at,
            e.relation, e.to_node_id
     FROM argument_node n
     LEFT JOIN argument_edge e ON e.from_node_id = n.id
@@ -220,6 +282,7 @@ export function listArguments(dbFile = DEFAULT_PATH) {
     SELECT a.slug, a.title, a.created_at,
            (SELECT body FROM argument_node WHERE id = a.root_node_id) AS excerpt,
            (SELECT author_label FROM argument_node WHERE id = a.root_node_id) AS owner_label,
+           (SELECT author_token FROM argument_node WHERE id = a.root_node_id) AS owner_token,
            (SELECT COUNT(DISTINCT author_token) FROM argument_node WHERE argument_id = a.id) AS participants,
            (SELECT MAX(created_at) FROM argument_node WHERE argument_id = a.id) AS last_activity
     FROM argument a
