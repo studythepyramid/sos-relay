@@ -1,15 +1,21 @@
 import express from 'express';
 import { initialize } from './db.js';
-import { regenerateList } from './render.js';
+import { regenerateAll } from './render.js';
 import { argumentRoutes } from './routes.js';
 import { dbPath, port, siteDir } from './settings.js';
 
 initialize(dbPath);
-// Make sure the list page exists and is current on startup, in case
-// site/ was wiped or this is a fresh checkout.
-regenerateList(dbPath);
+// Regenerate every page on startup, not just the list: a code deploy
+// (template change) needs to reach already-existing threads too, not
+// just ones that happen to get a new reply after the restart.
+regenerateAll(dbPath);
 
 const app = express();
+// Only Caddy, running on the same box, ever connects directly (service
+// binds 127.0.0.1 only) — trusting the loopback hop specifically lets
+// Express read the real client IP from X-Forwarded-For for rate limiting,
+// without trusting an arbitrary forwarded header from the open internet.
+app.set('trust proxy', 'loopback');
 app.use(express.json({ limit: '16kb' }));
 app.use('/api/argument', argumentRoutes(dbPath));
 
