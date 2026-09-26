@@ -62,6 +62,8 @@ ${FONT_LINK}
   body{margin:0;font-family:'JetBrains Mono',monospace;background:#0b0e0c;color:#cfe3d3}
   ::selection{background:#2c4a37;color:#eafaf0}
   a{color:#7bd88f}
+  .reply-btn{background:none;border:none;padding:0;font-family:inherit;cursor:pointer;color:#5f8a6e;font-size:13px}
+  .reply-btn:hover{color:#7bd88f;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -71,19 +73,31 @@ ${bodyHtml}
 `;
 }
 
-function nodeBlock(node) {
+function snippet(body, max = 60) {
+  const trimmed = body.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
+}
+
+function nodeBlock(node, nodesById, rootNodeId) {
   const color = RELATION_COLOR[node.relation ?? 'claim'] ?? '#8fa5c9';
   const tag = node.relation ? `<span style="color:${color};font-weight:700">[${node.relation}]</span>` : '<span style="color:#7bd88f;font-weight:700">[claim]</span>';
   const dim = node.relation === 'noise' ? ' style="opacity:.55"' : '';
+  const parent = node.to_node_id != null ? nodesById.get(node.to_node_id) : null;
+  const backlink = parent && node.to_node_id !== rootNodeId
+    ? `\n      <div style="margin-top:3px;font-size:13px;color:#4a6155">↳ replying to <span style="color:#7f9186">${escapeHtml(parent.author_label)}</span>: "${escapeHtml(snippet(parent.body, 50))}"</div>`
+    : '';
   return `    <div${dim} data-node-id="${node.id}">
-      <div style="font-size:16px;color:#5f7268">[${formatClock(node.created_at)}] &lt;${escapeHtml(node.author_label)}&gt; ${tag}</div>
+      <div style="font-size:16px;color:#5f7268">[${formatClock(node.created_at)}] &lt;${escapeHtml(node.author_label)}&gt; ${tag}</div>${backlink}
       <div style="margin-top:3px;font-size:17px;line-height:1.55">&gt; ${escapeHtml(node.body)}</div>
-      <a href="#" class="reply-link" data-to="${node.id}" style="font-size:13px;color:#4a6155;text-decoration:none">[ reply ]</a>
+      <button type="button" class="reply-btn" data-to="${node.id}" data-label="${escapeHtml(node.author_label)}" data-snippet="${escapeHtml(snippet(node.body))}">[ reply ]</button>
     </div>`;
 }
 
 export function renderThread(argumentRow) {
-  const nodes = argumentRow.nodes.map(nodeBlock).join('\n\n');
+  const nodesById = new Map(argumentRow.nodes.map((n) => [n.id, n]));
+  const nodes = argumentRow.nodes
+    .map((n) => nodeBlock(n, nodesById, argumentRow.root_node_id))
+    .join('\n\n');
   const rootTitle = escapeHtml(argumentRow.title);
   const body = `<x-dc-root style="display:block;min-height:100vh">
 <div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
@@ -99,6 +113,11 @@ export function renderThread(argumentRow) {
 
   <div style="flex:1 1 auto;padding:14px 20px;display:flex;flex-direction:column;gap:18px">
 ${nodes}
+  </div>
+
+  <div id="reply-target" style="display:none;padding:10px 20px 0;font-size:13px;color:#5f7268;position:sticky;bottom:64px;background:#0b0e0c">
+    replying to <span id="reply-target-label" style="color:#a7bcab"></span>: "<span id="reply-target-snippet"></span>"
+    <button type="button" id="reply-cancel" class="reply-btn" style="margin-left:6px">[ cancel — reply to thread instead ]</button>
   </div>
 
   <form id="reply-form" style="border-top:1px solid #23302a;padding:16px 20px;display:flex;gap:10px;align-items:center;position:sticky;bottom:0;background:#0b0e0c">
@@ -121,14 +140,34 @@ ${nodes}
   var slug = ${JSON.stringify(argumentRow.slug)};
   var rootNodeId = ${JSON.stringify(argumentRow.root_node_id)};
   var replyTo = document.getElementById('reply-to');
+  var target = document.getElementById('reply-target');
+  var targetLabel = document.getElementById('reply-target-label');
+  var targetSnippet = document.getElementById('reply-target-snippet');
   replyTo.value = rootNodeId;
-  document.querySelectorAll('.reply-link').forEach(function (el) {
-    el.addEventListener('click', function (e) {
-      e.preventDefault();
-      replyTo.value = el.dataset.to;
+
+  // Every reply click shows the indicator, including a click on the root
+  // claim itself — it's the oldest message on the page, and giving it a
+  // silent no-op while every other reply gets visible feedback reads as
+  // "the button doesn't work," not as "you're back to the default."
+  function setTarget(id, label, snippetText) {
+    replyTo.value = id;
+    targetLabel.textContent = label;
+    targetSnippet.textContent = snippetText;
+    target.style.display = 'block';
+  }
+
+  function resetTarget() {
+    replyTo.value = rootNodeId;
+    target.style.display = 'none';
+  }
+
+  document.querySelectorAll('.reply-btn[data-to]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      setTarget(el.dataset.to, el.dataset.label, el.dataset.snippet);
       document.querySelector('#reply-form input[name=body]').focus();
     });
   });
+  document.getElementById('reply-cancel').addEventListener('click', resetTarget);
   document.getElementById('reply-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var body = e.target.body.value.trim();
@@ -182,6 +221,16 @@ export function regenerateThread(dbFile, slug) {
 
 export function regenerateList(dbFile) {
   const rows = listArguments(dbFile);
+  writeAtomic(path.join(siteDir, 'index.html'), renderList(rows));
+  return rows;
+}
+
+// Regenerates every thread page plus the list, so a template change
+// (a code deploy) actually reaches already-existing pages instead of
+// leaving them stale until their next reply. Call on startup.
+export function regenerateAll(dbFile) {
+  const rows = listArguments(dbFile);
+  for (const row of rows) regenerateThread(dbFile, row.slug);
   writeAtomic(path.join(siteDir, 'index.html'), renderList(rows));
   return rows;
 }
