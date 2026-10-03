@@ -9,7 +9,7 @@ import { siteDir } from './settings.js';
 import { listArguments, getArgument } from './db.js';
 import { identicon } from './identicon.js';
 
-const PROFILE_LINK = '<a href="/user/" style="font-size:13px;color:#5f8a6e;text-decoration:none">[ set your name ]</a>';
+const PROFILE_LINK = '<a href="/user/" style="font-size:13px;color:#5f8a6e;text-decoration:none">[ account / log in ]</a>';
 
 const FONT_LINK =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n' +
@@ -140,12 +140,7 @@ ${nodes}
 </x-dc-root>
 <script>
 (function () {
-  function token() {
-    var k = 'argument_token';
-    var t = localStorage.getItem(k);
-    if (!t) { t = crypto.randomUUID(); localStorage.setItem(k, t); }
-    return t;
-  }
+
   var slug = ${JSON.stringify(argumentRow.slug)};
   var rootNodeId = ${JSON.stringify(argumentRow.root_node_id)};
   var replyTo = document.getElementById('reply-to');
@@ -183,7 +178,7 @@ ${nodes}
     if (!body) return;
     fetch('/api/argument/' + slug + '/reply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Argument-Token': token() },
+      headers: { 'Content-Type': 'application/json', 'X-Argument-Request': '1' },
       body: JSON.stringify({ toNodeId: Number(replyTo.value), body: body }),
     }).then(function (r) {
       if (r.ok) location.reload();

@@ -162,6 +162,22 @@ export function initialize(dbFile = DEFAULT_PATH) {
     db.prepare("INSERT INTO schema_migrations VALUES ('argument', 2, ?)")
       .run(new Date().toISOString());
   }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS argument_user (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS argument_session (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES argument_user(id) ON DELETE CASCADE,
+      expires_at INTEGER NOT NULL
+    );
+  `);
+  db.prepare("INSERT OR IGNORE INTO schema_migrations VALUES ('argument', 3, ?)")
+    .run(new Date().toISOString());
   return db;
 }
 
