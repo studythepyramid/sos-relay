@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { createArgument, addReply } from './db.js';
 import { regenerateThread, regenerateList } from './render.js';
-import { rateLimit, requireToken } from './middleware.js';
+import { rateLimit, requireJsonWrite } from './middleware.js';
+import { requireSession } from './auth.js';
 
 export function argumentRoutes(dbFile) {
   const router = Router();
 
   router.use(rateLimit);
-  router.use(requireToken);
+  router.use(requireJsonWrite);
+  router.use(requireSession(dbFile));
 
   // POST /api/argument  { title, body }
   router.post('/', (req, res) => {

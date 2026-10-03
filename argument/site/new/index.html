@@ -45,12 +45,7 @@
 </div>
 <script>
 (function () {
-  function token() {
-    var k = 'argument_token';
-    var t = localStorage.getItem(k);
-    if (!t) { t = crypto.randomUUID(); localStorage.setItem(k, t); }
-    return t;
-  }
+
 
   var title = document.getElementById('new-title');
   var claim = document.getElementById('new-claim');
@@ -68,7 +63,7 @@
     errorEl.style.display = 'none';
     fetch('/api/argument', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Argument-Token': token() },
+      headers: { 'Content-Type': 'application/json', 'X-Argument-Request': '1' },
       body: JSON.stringify({ title: title.value.trim(), body: claim.value.trim() }),
     }).then(function (r) {
       return r.json().then(function (j) { return { ok: r.ok, j: j }; });

@@ -30,15 +30,12 @@ export function rateLimit(req, res, next) {
   next();
 }
 
-// Every write carries the caller's silent client-side token — the server
-// never verifies it (no signup, no password; see argument/design.md's
-// identity notes), it just requires one be present so there's something
-// to attribute the write to.
-export function requireToken(req, res, next) {
-  const token = req.get('X-Argument-Token');
-  if (!token || typeof token !== 'string' || token.length < 8 || token.length > 200) {
-    return res.status(400).json({ error: 'Missing or invalid X-Argument-Token header' });
+// JSON writes require a custom header: cross-origin forms cannot send it,
+// and cross-origin fetch requires a CORS preflight (we do not enable CORS).
+export function requireJsonWrite(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  if (!req.is('application/json') || req.get('X-Argument-Request') !== '1') {
+    return res.status(403).json({ error: 'Invalid request' });
   }
-  req.argumentToken = token;
   next();
 }

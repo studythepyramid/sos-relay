@@ -1,3 +1,29 @@
+## Account registration (implemented October 2026)
+
+This section supersedes the anonymous-only identity notes below. `/user/`
+provides username/password registration, login, display-name editing, and logout.
+Reading remains public; creating arguments and replies requires a session.
+
+- `argument_user`: account ID, unique case-insensitive username, scrypt password
+  hash, random salt, and creation time. Usernames use 3–32 ASCII letters,
+  numbers, or underscores; passwords use 8–128 characters.
+- `argument_session`: SHA-256 hash of a random session secret, account ID,
+  and expiry (30 days). Login rotates the session; logout revokes it.
+- `argument_identity` remains the display-name store. New account IDs are used
+  as the author/owner identity in existing argument tables. Legacy anonymous
+  identities and posts remain unchanged and are not automatically claimed.
+- Cookies are HttpOnly, SameSite=Lax, and Secure over HTTPS. Production must
+  use HTTPS through the existing trusted loopback proxy. HTTP is supported for
+  local development only.
+- Writes require JSON and `X-Argument-Request: 1` as a CSRF guard. Do not add
+  permissive credentialed CORS. Existing per-IP rate limits also cover auth.
+- No email verification or password recovery is included yet.
+
+Start/restart the service with `cd argument && npm start` to create the tables
+in the configured database and regenerate thread pages with the new client code.
+The existing `/api/user` proxy route must forward its subpaths as well.
+Run `cd argument && npm test` for database and HTTP authentication tests.
+
 # Argument — design anchor
 
 A sub-project of `sos-relay`: online argumentation formed from facts and
@@ -406,7 +432,7 @@ sosweb.org {
         file_server
     }
 
-    @user_api path /api/user
+    @user_api path /api/user /api/user/*
     handle @user_api {
         reverse_proxy 127.0.0.1:8000
     }
@@ -464,3 +490,25 @@ https://claude.ai/artifact/NusPQTsQtEWc91ga9CXBHq
 
 Design-only. Not started. Revisit once the static site (docs/, MkDocs)
 and the base KB content are in a stable place.
+
+### Create an account from the command line
+
+From the repository root:
+
+```sh
+cd argument
+npm run create-user -- alice
+```
+
+Enter and confirm the password at the hidden prompts. The command writes to
+`db_file` in `argument/settings.toml` (currently `var/genone.db` relative to the
+repository root), and works without the web server running. It uses the same
+validation, salted password hashing, and account/profile transaction as web
+registration. Passwords may be simple: 8–128 characters, with no character-type
+requirements. Existing usernames are rejected, not overwritten.
+
+For automation, the command also accepts the password on standard input (one
+optional trailing newline is removed). Avoid putting passwords in command-line
+arguments or shell history. Direct SQL inserts must supply the correctly
+computed scrypt hash and salt plus a matching `argument_identity` row; use this
+command instead of inserting a plaintext password.
