@@ -67,7 +67,7 @@ export function startSession(dbFile, user, req, res) {
   res.cookie(sessionCookie, token, { ...cookieOptions(req), maxAge: lifetime });
 }
 
-export function requireSession(dbFile) {
+export function requireSession(dbFile, { loginRedirect } = {}) {
   return (req, res, next) => {
     const token = cookieToken(req);
     const user = token && connect(dbFile).prepare(`
@@ -75,7 +75,10 @@ export function requireSession(dbFile) {
       JOIN argument_user u ON u.id = s.user_id
       WHERE s.token_hash = ? AND s.expires_at > ?
     `).get(hash(token), Date.now());
-    if (!user) return res.status(401).json({ error: 'Please register or log in at /user/ before posting.' });
+    if (!user) {
+      if (loginRedirect) return res.redirect(302, loginRedirect);
+      return res.status(401).json({ error: 'Please register or log in at /user/ before posting.' });
+    }
     req.user = user;
     req.argumentToken = user.id;
     next();

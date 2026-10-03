@@ -414,6 +414,11 @@ silently wipe any argument pages living inside it:
 sosweb.org {
     redir /argument /argument/ 308
 
+    @argument_new path /argument/new /argument/new/*
+    handle @argument_new {
+        reverse_proxy 127.0.0.1:8000
+    }
+
     @argument path /argument/*
     handle @argument {
         uri strip_prefix /argument
@@ -512,3 +517,8 @@ optional trailing newline is removed). Avoid putting passwords in command-line
 arguments or shell history. Direct SQL inserts must supply the correctly
 computed scrypt hash and salt plus a matching `argument_identity` row; use this
 command instead of inserting a plaintext password.
+
+The new-thread page is session-protected before HTML is served. Caddy must
+proxy `/argument/new` and `/argument/new/*` before its static argument handler.
+Unauthenticated or expired sessions redirect to `/user/?next=%2Fargument%2Fnew%2F`;
+successful login or registration returns to the form. Responses use `no-store`.
