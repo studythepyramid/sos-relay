@@ -34,6 +34,7 @@ body{margin:0;font-family:monospace;background:#0b0e0c;color:#cfe3d3}main{max-wi
 const message = document.getElementById('message');
 // Only allow the known internal destination, never arbitrary redirect URLs.
 const returnToNew = new URLSearchParams(location.search).get('next') === '/argument/new/';
+const returnToMessages = new URLSearchParams(location.search).get('next') === '/publicMsg/';
 async function request(path, data) {
   const response = await fetch('/api/user' + path, data === undefined ? {} : {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Argument-Request': '1' }, body: JSON.stringify(data),
@@ -52,6 +53,7 @@ async function refresh() {
   if (!response.ok) throw new Error('Could not load your account. Please try again shortly.');
   const user = await response.json();
   if (returnToNew) { location.replace('/argument/new/'); return; }
+  if (returnToMessages) { location.replace('/publicMsg/'); return; }
   document.getElementById('auth').hidden = true;
   document.getElementById('profile').hidden = false;
   document.getElementById('username').textContent = user.username;

@@ -69,12 +69,7 @@ export function startSession(dbFile, user, req, res) {
 
 export function requireSession(dbFile, { loginRedirect } = {}) {
   return (req, res, next) => {
-    const token = cookieToken(req);
-    const user = token && connect(dbFile).prepare(`
-      SELECT u.id, u.username FROM argument_session s
-      JOIN argument_user u ON u.id = s.user_id
-      WHERE s.token_hash = ? AND s.expires_at > ?
-    `).get(hash(token), Date.now());
+    const user = sessionUser(dbFile, req);
     if (!user) {
       if (loginRedirect) return res.redirect(302, loginRedirect);
       return res.status(401).json({ error: 'Please register or log in at /user/ before posting.' });
@@ -83,4 +78,13 @@ export function requireSession(dbFile, { loginRedirect } = {}) {
     req.argumentToken = user.id;
     next();
   };
+}
+
+export function sessionUser(dbFile, req) {
+  const token = cookieToken(req);
+  return token && connect(dbFile).prepare(`
+    SELECT u.id, u.username FROM argument_session s
+    JOIN argument_user u ON u.id = s.user_id
+    WHERE s.token_hash = ? AND s.expires_at > ?
+  `).get(hash(token), Date.now());
 }

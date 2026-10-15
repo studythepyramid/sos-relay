@@ -173,6 +173,13 @@ docs/assets/tts/
 # Local-only test symlinks into personal ~/my/* content — never real site
 # content, never committed. Symlink whatever you're testing under here.
 docs/_local/
+# Local notes are published separately, never through the Git deployment.
+docs/mymd
+
+# Local credentials and agent-managed environment files.
+/.aws
+/.agents
+/.codex
 
 # mypy
 .mypy_cache/
@@ -234,3 +241,4 @@ argument/node_modules/
 argument/site/*
 !argument/site/new/
 !argument/site/user/
+!argument/site/publicMsg/

@@ -6,8 +6,11 @@ import { argumentRoutes } from './routes.js';
 import { userRoutes } from './userRoutes.js';
 import { newArgumentPage } from './pageRoutes.js';
 import { dbPath, port, siteDir } from './settings.js';
+import { initializePublicMsg, cleanupPublicMsg, publicMsgRoutes } from './publicMsg.js';
 
 initialize(dbPath);
+initializePublicMsg(dbPath);
+setInterval(() => cleanupPublicMsg(dbPath), 3600000).unref();
 // Regenerate every page on startup, not just the list: a code deploy
 // (template change) needs to reach already-existing threads too, not
 // just ones that happen to get a new reply after the restart.
@@ -19,6 +22,14 @@ const app = express();
 // Express read the real client IP from X-Forwarded-For for rate limiting,
 // without trusting an arbitrary forwarded header from the open internet.
 app.set('trust proxy', 'loopback');
+app.use('/api/publicMsg', express.json({ limit: '64kb' }), publicMsgRoutes(dbPath));
+app.use('/publicMsg', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'same-origin');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");
+  next();
+}, express.static(path.join(siteDir, 'publicMsg')));
 app.use(express.json({ limit: '16kb' }));
 app.use('/api/argument', argumentRoutes(dbPath));
 app.use('/api/user', userRoutes(dbPath));

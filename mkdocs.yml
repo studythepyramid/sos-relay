@@ -5,22 +5,14 @@ site_dir: site
 
 theme:
   name: material
+  favicon: assets/site-icon.png
+  logo: assets/site-icon.png
   language: en
+  font: false
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+    scheme: slate
+    primary: custom
+    accent: custom
   features:
     - navigation.tabs
     - navigation.sections
@@ -33,12 +25,16 @@ theme:
 plugins:
   - search
 
+hooks:
+  - scripts/homepage.py
+
 extra_javascript:
   - assets/voice-widget.js
   - assets/capability-probe.js
 
 extra_css:
   - assets/voice-widget.css
+  - assets/site-theme.css
 
 markdown_extensions:
   - admonition
@@ -51,8 +47,7 @@ markdown_extensions:
       permalink: true
 
 nav:
-  # index.md or index.html should be script generated
-  # list the contents of folder, group sub-folder together
+  # scripts/homepage.py supplies index.md from root-level za-index.md.
   - Home: index.md
   - SOS map (preview): map/index.html
 

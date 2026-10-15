@@ -1,0 +1,29 @@
+/* Match the dark green palette of /argument/. */
+[data-md-color-scheme="slate"] {
+  color-scheme: dark;
+  --md-default-bg-color: #0b0e0c;
+  --md-default-fg-color: #cfe3d3;
+  --md-default-fg-color--light: #a7bcab;
+  --md-default-fg-color--lighter: #8fa593;
+  --md-default-fg-color--lightest: #23302a;
+  --md-primary-fg-color: #121712;
+  --md-primary-fg-color--light: #23302a;
+  --md-primary-fg-color--dark: #0b0e0c;
+  --md-primary-bg-color: #eafaf0;
+  --md-primary-bg-color--light: #cfe3d3;
+  --md-accent-fg-color: #7bd88f;
+  --md-accent-fg-color--transparent: #7bd88f1a;
+  --md-accent-bg-color: #0b0e0c;
+  --md-typeset-a-color: #7bd88f;
+  --md-code-bg-color: #121712;
+  --md-code-fg-color: #cfe3d3;
+  --md-footer-bg-color: #121712;
+  --md-footer-bg-color--dark: #0b0e0c;
+}
+:root {
+  --md-text-font: ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace;
+  --md-code-font: ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace;
+}
+::selection { background: #2c4a37; color: #eafaf0; }
+.md-header { border-bottom: 1px solid #23302a; box-shadow: none; }
+.md-tabs { border-bottom: 1px solid #23302a; }
