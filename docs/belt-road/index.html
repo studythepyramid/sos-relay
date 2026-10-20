@@ -6,14 +6,22 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Belt &amp; Road · Public distress reports</title>
   <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
-  <link rel="stylesheet" href="../assets/belt-road.css">
+  <link rel="stylesheet" href="../assets/belt-road.css?v=2">
   <script defer src="../assets/leaflet/leaflet.js"></script>
-  <script defer src="../assets/belt-road.js"></script>
+  <script defer src="../assets/belt-road.js?v=2"></script>
 </head>
 <body>
   <header><a class="brand" href="https://sosweb.org/">✳ <span>SOS RELAY</span></a><h1>Belt &amp; Road</h1><a href="../map/"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#map-pin"></use></svg> SOS map <svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#external-link"></use></svg></a></header>
   <main>
     <div class="page-heading"><div><p class="eyebrow">PUBLIC DISTRESS REPORTS</p><p class="intro">Public pleas from people reporting coercion or trafficking.</p></div><span class="collection-label">Public sources · no user submissions</span></div>
+    <section class="discoveries-panel" aria-labelledby="discoveries-title">
+      <h2 id="discoveries-title">Crawler discoveries <span id="discovery-count">…</span></h2>
+      <p id="discovery-status" role="status">Loading latest discoveries…</p>
+      <label><input id="show-discoveries" type="checkbox" checked> Show discoveries on map</label>
+      <button id="fit-discoveries" type="button" disabled>Show discoveries</button>
+      <button id="retry-discoveries" type="button" hidden>Retry discoveries</button>
+      <details><summary>Browse discoveries and source pages</summary><p>Circles show source-reported locations rounded to an approximate area. Solid amber: publisher-documented; dashed: suspected by publisher. These are historical research candidates awaiting SOS Relay review; public victim messages and Belt &amp; Road relationships have not been established.</p><ul id="discovery-list"></ul></details>
+    </section>
     <div class="workspace">
       <section class="map-panel" aria-label="Global map of public distress reports">
         <div class="map-toolbar"><span class="legend"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#skull"></use></svg> Reported coercion · not a death count</span><button id="world-view" type="button"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#globe"></use></svg>World view</button></div>
@@ -30,6 +38,6 @@
       </aside>
     </div>
   </main>
-  <noscript>JavaScript is required for the map. <a href="/api/belt-road/cases">Read the published source records as JSON</a>.</noscript>
+  <noscript>JavaScript is required for the map. <a href="/api/belt-road/cases">Reviewed reports</a> · <a href="/api/belt-road/discoveries">Crawler discoveries as JSON</a>.</noscript>
 </body>
 </html>

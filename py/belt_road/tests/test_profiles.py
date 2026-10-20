@@ -37,6 +37,13 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(parse_tables('13 ANNEX II SCAMMING COMPOUNDS AND INTERVENTIONS LIST\nZZ01 10.1111,100.1111'), [])
         self.assertEqual(parse_tables('ZZ01 is mentioned in a story about a site'), [])
 
+    def test_explicit_public_location_projection_rounds_and_validates(self):
+        table = TABLE.replace('100.', '104.')
+        rows = parse_tables(table, include_locations=True)
+        self.assertEqual(rows[0]['location'], {'latitude':10.11,'longitude':104.11,'radius_m':2000})
+        with self.assertRaises(ValueError):
+            parse_tables(TABLE, include_locations=True)
+
     def test_conflicting_source_classifications_fail(self):
         with self.assertRaises(ValueError):
             parse_tables(TABLE.replace('ZZ04 10.4444', 'ZZ01 10.4444'))

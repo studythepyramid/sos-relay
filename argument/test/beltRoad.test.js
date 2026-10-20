@@ -77,3 +77,28 @@ test('invalid published source URLs fail closed without leaking storage errors',
   const response=await fetch(url);assert.equal(response.status,503);
   assert.deepEqual(await response.json(),{error:'Published reports are temporarily unavailable. Try again.'});
 });
+
+test('discovery projection is separate, read-only and excludes private fields', async t => {
+  const {writer,url} = await setup(t);
+  const endpoint = url.replace('/cases', '/discoveries');
+  assert.deepEqual((await (await fetch(endpoint)).json()).discoveries, []);
+  writer.exec('CREATE TABLE br_discoveries(id TEXT PRIMARY KEY,public_json TEXT,published_at TEXT)');
+  const row = {id:'synthetic:ZZ01',site_code:'ZZ01',country:'Fictional country',
+    classification:'source_suspected',review_status:'needs_review',message_evidence:'not_assessed',
+    location:{latitude:12,longitude:104,radius_m:2000,private_notes:'PRIVATE'},
+    pdf_page:10,source_url:'https://example.org/report.pdf',publisher:'Synthetic publisher',
+    source_title:'Synthetic report',section:'Annex III',raw_text:'PRIVATE'};
+  writer.prepare('INSERT INTO br_discoveries VALUES(?,?,?)').run(row.id,JSON.stringify(row),'2026-01-01');
+  const response = await fetch(endpoint);
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  const data = await response.json();
+  assert.equal(data.discoveries.length,1);
+  assert.equal(data.discoveries[0].classification,'source_suspected');
+  assert(!JSON.stringify(data).includes('PRIVATE'));
+  assert.equal((await (await fetch(url)).json()).cases.length,0);
+  assert.equal((await fetch(endpoint,{method:'POST'})).status,405);
+  row.source_url='javascript:alert(1)';
+  writer.prepare('UPDATE br_discoveries SET public_json=?').run(JSON.stringify(row));
+  assert.equal((await fetch(endpoint)).status,503);
+});

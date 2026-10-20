@@ -11,6 +11,7 @@
   const skull = '<svg aria-hidden="true" viewBox="0 0 24 24"><use href="../assets/icons/lucide.svg#skull"></use></svg>';
   let map, layers, cases = [], filtered = [], selectedId = null;
   let loading = false;
+  let discoveries = [], discoveryLayers, discoveryLoading = false;
   let hasMore = false;
   const markers = new Map();
   const world = () => { if (map) map.setView([18, 20], 2, { animate: false }); };
@@ -18,6 +19,7 @@
     map = L.map('belt-map', { worldCopyJump: true, minZoom: 2, maxZoom: 16 });
     world();
     layers = L.layerGroup().addTo(map);
+    discoveryLayers = L.layerGroup().addTo(map);
     const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
@@ -112,6 +114,7 @@
   function renderMap() {
     markers.clear(); if (!map) return;
     layers.clearLayers();
+    renderDiscoveries();
     const groups = [];
     for (const item of filtered) {
       const point = [item.location.latitude, item.location.longitude];
@@ -157,6 +160,7 @@
       selectedId = null; $('case-detail').hidden = true; setUrl(null);
     }
     renderList(); renderMap();
+    renderDiscoveryList();
     $('data-status').textContent = filtered.length ? (hasMore ? 'Showing the first 500 published reports. Search applies to this loaded set.' : '') : query ? 'No matching reports. Try another name or place.' : 'No reviewed reports published yet.';
   }
   async function load() {
@@ -170,7 +174,7 @@
       cases = data.cases;
       hasMore = data.has_more === true;
       $('updated-label').textContent = `Updated ${data.generated_at.slice(0, 10)}`;
-      $('collection-note').textContent = 'OpenStreetMap supplies map tiles and receives your network address and viewed map areas. Public cases have been source-checked in the server catalogue. New crawler discoveries stay in a private review queue; publication is a separate step.';
+      $('collection-note').textContent = 'OpenStreetMap supplies map tiles and receives your network address and viewed map areas. Skull reports have been source-checked in the server catalogue. Crawler discoveries are published separately as attributed research candidates awaiting review.';
       filter();
       const id = new URL(location.href).searchParams.get('case');
       const selected = cases.find(item => item.id === id);
@@ -190,5 +194,80 @@
     if (selectedId && markers.has(selectedId)) markers.get(selectedId).openPopup();
   });
   $('retry-data').addEventListener('click', load);
+  function matchingDiscoveries() {
+    const query = $('case-search').value.trim().toLocaleLowerCase();
+    return discoveries.filter(item => `${item.site_code} ${item.country} ${item.publisher} ${item.classification}`.toLocaleLowerCase().includes(query));
+  }
+  function discoveryLabel(item) {
+    return item.classification === 'source_documented' ? 'Publisher-documented' : 'Suspected by publisher';
+  }
+  function discoverySource(item) {
+    const link = make('a', `${item.publisher} · ${item.section} · PDF page ${item.pdf_page}`);
+    const url = new URL(item.source_url); url.hash = `page=${item.pdf_page}`;
+    link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+    return link;
+  }
+  function discoveryPopup(item) {
+    const popup = make('div');
+    popup.append(make('strong', `${item.country} · ${item.site_code}`),
+      make('p', `${discoveryLabel(item)} · awaiting SOS Relay review`),
+      make('p', `${item.source_title}. Approximate reported area; current activity and public victim-message evidence not assessed.`), discoverySource(item));
+    return popup;
+  }
+  function renderDiscoveries() {
+    if (!map) return;
+    discoveryLayers.clearLayers();
+    if (!$('show-discoveries').checked) return;
+    for (const item of matchingDiscoveries()) {
+      L.circleMarker([item.location.latitude, item.location.longitude], {
+        radius: 7, color: '#99601c', weight: 2, fillColor: '#edb653',
+        fillOpacity: item.classification === 'source_documented' ? .7 : .15,
+        dashArray: item.classification === 'source_suspected' ? '3 3' : null
+      }).bindTooltip(`${item.site_code} · ${discoveryLabel(item)} · needs review`)
+        .bindPopup(discoveryPopup(item)).addTo(discoveryLayers);
+    }
+  }
+  function renderDiscoveryList() {
+    const list = $('discovery-list'); list.replaceChildren();
+    for (const item of matchingDiscoveries()) {
+      const li = make('li');
+      const button = make('button', `${item.country} · ${item.site_code}`); button.type = 'button';
+      button.disabled = !map;
+      button.addEventListener('click', () => {
+        $('show-discoveries').checked = true; renderDiscoveries();
+        map.fitBounds(locationBounds(item), {maxZoom: 12, animate: false});
+        L.popup().setLatLng([item.location.latitude, item.location.longitude])
+          .setContent(discoveryPopup(item)).openOn(map);
+        $('belt-map').scrollIntoView({block: 'center'});
+      });
+      li.append(button, make('span', discoveryLabel(item)), discoverySource(item)); list.append(li);
+    }
+  }
+  async function loadDiscoveries() {
+    if (discoveryLoading) return; discoveryLoading = true;
+    $('retry-discoveries').hidden = true;
+    try {
+      const response = await fetch('/api/belt-road/discoveries', {cache: 'no-store', credentials: 'omit'});
+      if (!response.ok) throw new Error('Discoveries unavailable');
+      const data = await response.json();
+      if (data.schema_version !== 1 || !Array.isArray(data.discoveries)) throw new Error('Invalid discoveries');
+      discoveries = data.discoveries;
+      $('discovery-count').textContent = String(discoveries.length);
+      const documented = discoveries.filter(item => item.classification === 'source_documented').length;
+      $('discovery-status').textContent = `${documented} publisher-documented · ${discoveries.length - documented} suspected · awaiting review${data.has_more ? ' · showing first 500' : ''}`;
+      $('fit-discoveries').disabled = !map || !discoveries.length;
+      renderDiscoveries(); renderDiscoveryList();
+    } catch {
+      $('discovery-count').textContent = 'Unavailable';
+      $('discovery-status').textContent = 'Could not load crawler discoveries. Reviewed reports are available separately.';
+      $('retry-discoveries').hidden = false;
+    } finally { discoveryLoading = false; }
+  }
+  $('show-discoveries').addEventListener('change', renderDiscoveries);
+  $('fit-discoveries').addEventListener('click', () => {
+    $('show-discoveries').checked = true; renderDiscoveries(); fitReports(matchingDiscoveries());
+  });
+  $('retry-discoveries').addEventListener('click', loadDiscoveries);
   load();
+  loadDiscoveries();
 })();

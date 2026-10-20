@@ -1,6 +1,7 @@
 """Extract source-coded site candidates from supported public report tables.
 
-No coordinates, victim identities or map publication are produced by this module.
+Private collection omits coordinates. An explicit operator projection can request
+rounded public report locations; no victim identities are extracted.
 """
 from pathlib import Path
 import re
@@ -13,7 +14,7 @@ CODE = re.compile(r'^\s*(?:[0-9]+\s+)?([A-Z]{2,3}[0-9]{2}[A-Z]?)\b')
 COORDINATES = re.compile(r'\b\d{1,3}\.\d{3,}(?:\s*,\s*|\s+)\d{1,3}\.\d{3,}\b')
 
 
-def parse_tables(text, first_page=FIRST_PAGE):
+def parse_tables(text, first_page=FIRST_PAGE, include_locations=False):
     """Use Annex II/III headings and coordinate-bearing rows, not narrative mentions."""
     result = {}
     section = None
@@ -30,8 +31,8 @@ def parse_tables(text, first_page=FIRST_PAGE):
             match = CODE.match(line)
             if not match:
                 continue
-            # Coordinate text is checked to identify table rows but deliberately
-            # not copied into candidate records or made available to the map.
+            # Private collection uses coordinate text only to recognize table rows.
+            # Location output requires the separate operator projection flag.
             row = line
             for following in lines[index + 1:index + 3]:
                 if CODE.match(following):
@@ -44,6 +45,13 @@ def parse_tables(text, first_page=FIRST_PAGE):
                     'country': 'Cambodia', 'evidence_level': section,
                     'pdf_page': first_page + offset,
                     'section': 'Annex II' if section == 'source_documented' else 'Annex III'}
+            if include_locations:
+                coordinates = re.findall(r'\d{1,3}\.\d{3,}', COORDINATES.search(row).group())
+                latitude, longitude = map(float, coordinates)
+                if not (9 <= latitude <= 15 and 102 <= longitude <= 108):
+                    raise ValueError('Report coordinate outside Cambodia; review extraction')
+                item['location'] = {'latitude': round(latitude, 2),
+                                    'longitude': round(longitude, 2), 'radius_m': 2000}
             if code in result and result[code]['evidence_level'] != section:
                 raise ValueError('A site appears in conflicting source sections; review extraction')
             result.setdefault(code, item)

@@ -65,5 +65,36 @@ export function beltRoadRoutes(dbFile) {
     }
   });
   router.all('/cases', (req, res) => res.set('Allow', 'GET, HEAD').status(405).json({ error: 'Read-only endpoint' }));
+  router.get('/discoveries', (req, res) => {
+    let db;
+    try {
+      db = new DatabaseSync(dbFile, { readOnly: true });
+      const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='br_discoveries'").get();
+      const rows = exists ? db.prepare('SELECT public_json,published_at FROM br_discoveries ORDER BY id LIMIT ?').all(MAX_CASES + 1) : [];
+      const discoveries = rows.slice(0, MAX_CASES).map(row => publicDiscovery(row.public_json));
+      res.json({ schema_version: 1, discoveries, has_more: rows.length > MAX_CASES,
+        generated_at: rows.reduce((last, row) => row.published_at > last ? row.published_at : last, '') });
+    } catch {
+      res.status(503).json({ error: 'Crawler discoveries are temporarily unavailable. Try again.' });
+    } finally { if (db) db.close(); }
+  });
+  router.all('/discoveries', (req, res) => res.set('Allow', 'GET, HEAD').status(405).json({ error: 'Read-only endpoint' }));
   return router;
+}
+
+function publicDiscovery(payload) {
+  const row = JSON.parse(payload);
+  if (!['source_documented', 'source_suspected'].includes(row.classification) ||
+      !Number.isInteger(row.pdf_page) || row.pdf_page < 1 || row.pdf_page > 10000 ||
+      row.review_status !== 'needs_review' || row.message_evidence !== 'not_assessed' ||
+      !row.location || !Number.isFinite(row.location.latitude) || Math.abs(row.location.latitude) > 90 ||
+      !Number.isFinite(row.location.longitude) || Math.abs(row.location.longitude) > 180 ||
+      row.location.radius_m !== 2000) throw new Error('Invalid discovery');
+  return { id: string(row.id, 100), site_code: string(row.site_code, 30),
+    country: string(row.country, 100), classification: row.classification,
+    review_status: 'needs_review', message_evidence: 'not_assessed',
+    location: {latitude: row.location.latitude, longitude: row.location.longitude, radius_m: 2000},
+    pdf_page: row.pdf_page, source_url: sourceUrl(row.source_url),
+    publisher: string(row.publisher, 200), source_title: string(row.source_title, 300),
+    section: string(row.section, 100) };
 }

@@ -106,3 +106,24 @@ ssh lightsail.a 'sudo -u sos-crawler python3 /opt/sos-relay/py/belt_road/crawl.p
 
 No site candidates become public skulls automatically. They still need individual
 source/message/location and disclosure review under the existing map criteria.
+
+## Publish attributed discoveries separately
+
+The public page can show unreviewed, publisher-attributed discoveries as amber
+circles and a source list, distinct from skull reports. Collection alone never
+writes this public projection. After checking the source, an operator runs:
+
+```bash
+sudo python3 /opt/sos-relay/py/belt_road/publish_discoveries.py \
+  --crawl-db /var/lib/sos-relay-crawler/crawl.db \
+  --catalog-db /var/lib/sos-relay-map/catalog.db --document-id DOCUMENT_ID
+```
+
+The operator needs read access to private crawl state and write access to the
+existing catalogue. This projection only supports the checked Amnesty report
+adapter, validates all 122 source rows against stored evidence, and publishes
+rounded report coordinates, classifications and PDF citations. It does not
+change any review state or `br_cases` record. Re-running is idempotent. To remove
+a discovery, delete its ID from `br_discoveries` using the trusted local SQLite
+operator connection. The next `/api/belt-road/discoveries` read reflects changes
+without a Git push or site rebuild. Raw crawl state stays private on Lightsail.

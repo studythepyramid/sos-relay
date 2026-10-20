@@ -22,6 +22,19 @@
   generated homepage, map, Belt & Road, and documentation logo links were
   checked. The crawl completed with 122 distinct keys and 122 page references.
 
+**Crawler discoveries made visible separately from reviewed reports.**
+
+- Added a public discovery API, visible result counts, a source-page list,
+  and an optional map layer with distinct publisher-documented/suspected circles.
+- Added an operator-only SQLite projection of source codes, classifications,
+  rounded locations and PDF citations. Private crawl text/configuration stay
+  on Lightsail; publication does not change candidate review states or skull cases.
+- Validated the real stored report projection: 122 sites, including 86
+  publisher-documented and 36 suspected sites. Locations remain approximate;
+  current activity, public-message evidence and BRI links are not established.
+- Validation: 22 Python tests and 18 Node tests passed. JavaScript syntax and
+  the MkDocs build were checked; no collected records were added to Git.
+
 ## 2026-10-15
 
 Edited by za and Codex.

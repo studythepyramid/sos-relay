@@ -23,6 +23,21 @@ needed to add, revise or withdraw a published case.
 - `docs/assets/belt-road.js`: fetches the API, displays source-attributed skulls,
   groups screen collisions with count badges and preserves `?case=<id>` links.
 
+The separate `/api/belt-road/discoveries` endpoint reads an operator-published
+`br_discoveries(id, public_json, published_at)` projection in the same catalogue.
+It never opens the private crawler DB. The page shows a discovery count, an
+expandable source list, and amber circle markers: solid for publisher-documented,
+dashed for publisher-suspected. These remain `needs_review`, with public-message
+evidence `not_assessed`; they are not reviewed skull reports. Classification is
+the publisher's historical assessment, not a current danger finding.
+
+`publish_discoveries.py` validates the supported report totals and stored page
+references, then copies only site codes, classifications, citations and locations
+rounded to two decimals. Its 2 km display area is illustrative, not a confidence
+bound. No original messages, names, extracted text, internal errors or operational
+configuration enter the public projection. The API also validates an allowlist.
+Both public endpoints are read-only, uncached and bounded to 500 records.
+
 The API sends Cache-Control: no-store. Missing/unreadable storage returns 503;
 no new empty DB is created. Drafts, audit/reviewer metadata and arbitrary crawler
 fields cannot enter the public projection. POST is rejected. Reads are capped
