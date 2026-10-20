@@ -1,3 +1,7 @@
+> Architecture correction, 2026-10-20: case records, operational seed lists and
+> SQLite are private server state, excluded from Git. The public page now reads
+> published catalogue snapshots through an API; static case exports are obsolete.
+
 # Crawler proposal for /belt-road/
 
 Research checked 2026-10-20. This document describes the intended architecture.
@@ -55,7 +59,7 @@ browser is unnecessary for the initial HTML/PDF source set. Fetch-only workers
 must not receive the catalogue's publication privileges.
 
 Discovery → fetch → extract → research candidates → review → catalogue draft
-import → publication snapshot → static export → normal site build/deploy.
+import → publication snapshot → server-owned SQLite → read-only public API.
 
 Proposed modules, not existing commands:
 

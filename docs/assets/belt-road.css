@@ -5,3 +5,5 @@ header{display:flex;align-items:center;gap:28px;background:var(--surface);paddin
 @media(max-width:380px){header{gap:10px}.brand span{letter-spacing:.03em}header>a:last-child{font-size:11px}}
 
 .icon{display:inline-block;width:16px;height:16px;flex-shrink:0;vertical-align:middle}.legend>.icon{width:22px;height:22px;color:var(--alert)}.map-toolbar button,.search-row button,header>a:last-child{display:inline-flex;align-items:center;gap:6px}
+
+.skull-count{position:absolute;right:-9px;top:-9px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 4px;border-radius:10px;background:var(--alert);color:white;border:2px solid var(--surface);font:700 10px/1 system-ui}.leaflet-popup-content button{white-space:normal;text-align:left}

@@ -242,3 +242,14 @@ argument/site/*
 !argument/site/new/
 !argument/site/user/
 !argument/site/publicMsg/
+
+# Server-owned databases and Belt & Road collection artifacts: never source code.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+/docs/belt-road/*.json
+/py/belt_road/seed.json
+/py/belt_road/reviewed-reports.json
+/py/belt_road/sources.json

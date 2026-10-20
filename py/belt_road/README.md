@@ -1,145 +1,94 @@
-# /belt-road/ — first local implementation
+# /belt-road/ — server-owned data
 
-The page is a static, read-only Leaflet map of public reports of victim
-communications. It uses the existing vendored Leaflet and OpenStreetMap tiles.
-It is not a user SOS intake, a live-danger service or a death count.
+The Leaflet page is code in Git. Case records, source configuration, collection
+results and SQLite files are runtime state and must not be committed to GitHub.
+`var/` and database/artifact patterns are Git-ignored. All automated tests use
+synthetic fixtures, never scraped case records.
 
-This first slice includes one manually source-checked historical report concerning
-Tai Chang, Myanmar. It displays a regional map centre and illustrative 30 km area,
-not an exact building or statistical confidence bound. No direct Belt and Road
-project relationship has been established for this record. Source attribution
-is a separate matter from independently verifying the reported account.
+## Production architecture
 
-A bounded discovery crawler is implemented in `crawl.py`; its discoveries stay
-in a separate private database. The catalogue importer is the boundary for
-reviewed, fully extracted candidates. It accepts fully extracted candidate records, not raw pages or
-incomplete place descriptions. Rejected batches make no partial changes. A future
-fetch/discovery queue must retain raw retrieval metadata and incomplete candidates
-outside the public site; this importer is not that crawler/archive.
+Crawler → private discovery SQLite → source/location review → published SQLite
+snapshot → GET /api/belt-road/cases → Leaflet. No Git push or static rebuild is
+needed to add, revise or withdraw a published case.
 
-## Files and architecture
+- `/var/lib/sos-relay-crawler/crawl.db`: private research documents/leads, owned
+  by sos-crawler; never used directly by the public API.
+- `/var/lib/sos-relay-crawler/sources.json`: server-owned crawler allowlist/seeds.
+- `/var/lib/sos-relay-map/catalog.db`: reviewed catalogue, owned by admin, outside
+  the code checkout and all static document roots.
+- `argument/src/beltRoad.js`: read-only API in the existing Node service. Database
+  path comes from BELT_ROAD_DB_FILE. The service opens it read-only per request
+  and returns an explicit field allowlist from published_json only.
+- `docs/belt-road/`: HTML only; no case export is bundled or used as a fallback.
+- `docs/assets/belt-road.js`: fetches the API, displays source-attributed skulls,
+  groups screen collisions with count badges and preserves `?case=<id>` links.
 
-- `docs/belt-road/index.html`: canonical route /belt-road/, also served by MkDocs.
-- `docs/assets/belt-road.js`: fetch public JSON, render skulls/areas, search,
-  case/source details, shareable `?case=<stable-id>` URL and map controls.
-- `docs/assets/belt-road.css`: map-first desktop layout and stacked phone layout.
-- `catalog.py`: validated draft import, explicit publication/withdrawal and
-  atomic static export; Python standard library only.
-- `var/belt-road.db`: private local collection database, ignored by git and
-  outside static roots. Separate from genone.db to isolate collection writes
-  and avoid changing SOS/account/argument storage in this slice.
-- `docs/belt-road/cases.json`: generated public projection, safe for static hosting.
-- `seed.json`: reproducible manual source seed. It contains no victim identity,
-  original private message, precise building coordinates or fabricated cases.
+The API sends Cache-Control: no-store. Missing/unreadable storage returns 503;
+no new empty DB is created. Drafts, audit/reviewer metadata and arbitrary crawler
+fields cannot enter the public projection. POST is rejected. Reads are capped
+at 500 reports and explicitly report has_more; viewport queries and aggregation
+must replace this pilot limit as the catalogue grows.
 
-## Data structure
+## Catalogue structure
 
-Crawler adapters emit a JSON array using the shape in `seed.json`:
+`br_cases(id, draft_json, draft_updated_at, published_json, published_at,
+reviewed_by, review_note)` keeps draft and published snapshots separate.
+`br_audit` records import/publication/withdrawal decisions. `schema_migrations`
+tracks belt_road v1. An import cannot overwrite the published snapshot.
 
-- `id`: stable lowercase record slug; never derive solely from a person's name.
-- `title`, `country`, `summary`: neutral report/site description and attribution.
-- `reported_on`: source report date, not an invented precise incident date.
-- `communication`: what public reporting says about the communication and its form.
-- `current_status`: temporal limitation; a historical plea is not a current receipt.
-- `collection_method`: `crawler` or `manual_seed`; importer does not mislabel seeds.
-- `location`: latitude/longitude, `region` or `site` precision, radius in metres,
-  human-readable label, and an explicit account of the geolocation basis.
-- `sources[]`: HTTPS URL, title, publisher, publication/access dates, source kind
-  and bounded text describing exactly what it supports. At least one
-  `victim_message_report` and one `location_context` source are required.
+Candidate fields: stable ID, neutral title/country/summary, report date, public
+communication description, temporal limitations, collection method, location
+coordinates/precision/radius/basis and sources with publication/access dates and
+bounded statements of what each supports. Distinct source counts deduplicate
+URLs: a communication and its location supported by one article is one source.
 
-The importer constructs a fixed allowlist. Unknown input fields are discarded;
-caller-supplied review/publication fields have no effect. Public evidence status
-is currently fixed to `Publicly reported` and Belt and Road status to
-`Not established`. Other statuses require a future explicit schema/review extension.
+Each public skull requires attributable public communication and place context.
+Regional markers are editorial centres with explicitly illustrative areas, not
+precise buildings, statistical confidence bounds or current victim whereabouts.
+Historical sources do not establish current activity. A public plea conveyed
+while reportedly confined is distinguishable from a later interview describing
+a message, and neither is presented as a hosted original leaked chat. No direct
+Belt and Road relationship is inferred from geography or nationality.
 
-SQLite v1 stores:
+## Operator workflow on Lightsail
 
-- `br_cases(id, draft_json, draft_updated_at, published_json, published_at,
-  reviewed_by, review_note)`: candidate and separately published snapshots.
-- `br_audit(id, case_id, action, actor, note, created_at)`: import/publication/
-  withdrawal history. Review metadata remains private.
-- `schema_migrations(component, version, applied_at)`: belt_road v1.
-
-JSON snapshots deliberately make this small first slice simple; they are not the
-proposed million-entity normalized graph. Later normalize sources, claims,
-locations, relationships and content/argument targets, with R*Tree viewport
-queries. Static export has a 500-record limit to prevent accidental unbounded
-mobile downloads; add a viewport API/aggregation before growing beyond it.
-
-## Collection → publication
-
-Run from repository root, using root-level uv (no added dependencies):
+Keep extracted candidate files privately on the server, then run:
 
 ```bash
-uv run python py/belt_road/catalog.py import py/belt_road/seed.json
-uv run python py/belt_road/catalog.py list
-uv run python py/belt_road/catalog.py publish tai-chang-public-plea-2025 \
-  --reviewed-by YOUR_REVIEWER_NAME \
-  --note 'Source, date, location precision and public disclosure checked.'
-uv run python py/belt_road/catalog.py export
+python3 /opt/sos-relay/py/belt_road/catalog.py \
+  --db /var/lib/sos-relay-map/catalog.db import /private/path/candidates.json
+python3 /opt/sos-relay/py/belt_road/catalog.py \
+  --db /var/lib/sos-relay-map/catalog.db publish CASE_ID \
+  --reviewed-by REVIEWER --note 'Sources, date, location and disclosure checked.'
+```
+
+The next API request sees the publication immediately. Use `withdraw CASE_ID`
+with reviewer/note to remove a case from subsequent reads. No static export or
+rebuild is involved. The optional `export` command defaults to ignored
+var/belt-road-export.json for private inspection/transfer; never write it under
+docs/ or commit it. Public readers can of course retain copies of already public
+information after a later withdrawal.
+
+`catalog.py` is a trusted local operator tool, not an authentication boundary.
+The fetch worker has no permission to write the reviewed catalogue. Automated
+collection alone does not publish allegations.
+
+## Preview, tests and future work
+
+A local preview reads the ignored local var/belt-road.db through a read-only
+preview API; never serves the DB itself:
+
+```bash
 uv run python py/belt_road/preview.py
-```
-
-Import always writes a draft. Reimporting an ID cannot replace its published
-snapshot. A reviewer inspects source content, attribution, location precision,
-recency and disclosure, then publishes a snapshot. `export` emits only published
-snapshots and their review dates; it does not export the database or audit data.
-The checked-in source seed was reviewed by Codex, not a human reviewer.
-
-To remove a marker, run `withdraw ID --reviewed-by NAME --note REASON`, then
-`export`, rebuild and deploy through the normal site workflow. Withdrawal in
-SQLite alone does not retract an existing static export, deployed file, cached
-copy or third-party archive. Export, build, and deployment must remain a coupled
-publication step. Preview copies files at startup, so restart after an export.
-
-Only the operator's local CLI can import/review. There is no public write API.
-Reviewer names are audit labels, not authentication or a guarantee of independent
-review. Do not give future crawler workers access to the publication CLI or DB
-write permissions without adding an enforced role boundary. Current command
-separation prevents accidental publication, not a malicious local operator.
-
-## Page design
-
-Desktop: narrow brand/header, one-line purpose, large global map, 350 px sidebar.
-The sidebar begins with search and compact report cards. Selecting a skull/card
-opens source details at the same canonical page, using `?case=` for sharing.
-
-Phone: global map first (52% of viewport height), then search/cards and selected
-report. Coordinates stay schematic for regional cases: selecting one fits its
-area and caps zoom rather than implying a precise building. Skull markers mean
-reported coercion, not confirmed deaths. Region areas have dashed outlines.
-
-Dates, attribution and location precision appear with the report; extended
-collection details are expandable. Empty/error states do not invent markers.
-The initial global view is intentionally sparse because the collection is small.
-There are no speculative Belt and Road routes or inferred criminality layers.
-
-Details have a stable `data-content-id="belt-road:<case-id>"` for the planned
-site-wide argument target registry. This slice does not implement that registry,
-thread creation or embedded arguments. It does not relocate records under
-/argument/ or expose a nonfunctional discussion button.
-
-## Checks
-
-```bash
 PYTHONPATH=py/belt_road uv run python -m unittest discover -s py/belt_road/tests -v
-node --check docs/assets/belt-road.js
-uv run mkdocs build -d /tmp/sos-relay-belt-road-build
+cd argument
+npm test
 ```
 
-Tests exercise draft/public separation, snapshot preservation across imports,
-withdrawal/audit, all-or-nothing batches, source requirements, invalid geometry/
-URLs/dates, and publication metadata. Browser QA should cover marker/card
-selection, filters, deep links, mobile overflow and unavailable tiles/data.
+Source provenance and generic content IDs are ready for later discussion
+integration; no embedded argument/thread feature is implemented yet. The stable
+content ID is belt-road:<case-id>, and canonical URLs remain /belt-road/?case=ID.
 
-## Next crawler work
-
-[CRAWLER.md](CRAWLER.md) records researched source seeds, the proposed Python
-collector, the missing private discovery/document/candidate queue, and a bounded
-first run. Wikipedia is a reference-discovery tool, not an automatic source of
-accusation markers. Survivor interviews and publicly reported pleas remain
-distinct evidence kinds.
-
-The Belt & Road controls and marker now use a small vendored Lucide SVG sprite
-from the user-linked tmp/icons collection; its license ships in docs/assets/icons/.
+See OPERATIONS.md for the Lightsail crawler service and CRAWLER.md for its intended
+expansion. No schedule is enabled. Lucide icons are vendored code assets with the
+license retained in docs/assets/icons/; pages do not depend on the local symlink.

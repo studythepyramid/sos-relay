@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB = ROOT / 'var' / 'belt-road.db'
-DEFAULT_EXPORT = ROOT / 'docs' / 'belt-road' / 'cases.json'
+DEFAULT_EXPORT = ROOT / 'var' / 'belt-road-export.json'
 
 
 def now():
@@ -209,10 +209,10 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == 'import':
-            print(f'Imported {import_records(args.db, json.loads(args.file.read_text()))} draft(s); public export unchanged.')
+            print(f'Imported {import_records(args.db, json.loads(args.file.read_text()))} draft(s); published snapshots unchanged.')
         elif args.command in ('publish', 'withdraw'):
             globals()[args.command](args.db, args.id, args.reviewed_by, args.note)
-            print(f'{args.command}: {args.id}. Run export to update the static site.')
+            print(f'{args.command}: {args.id}. The API reads the current published snapshot directly.')
         elif args.command == 'export':
             print(f'Exported {export_records(args.db, args.output)} reviewed case(s) to {args.output}')
         else:

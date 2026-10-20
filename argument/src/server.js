@@ -5,7 +5,8 @@ import { regenerateAll } from './render.js';
 import { argumentRoutes } from './routes.js';
 import { userRoutes } from './userRoutes.js';
 import { newArgumentPage } from './pageRoutes.js';
-import { dbPath, port, siteDir } from './settings.js';
+import { dbPath, port, siteDir, beltRoadDbPath } from './settings.js';
+import { beltRoadRoutes } from './beltRoad.js';
 import { initializePublicMsg, cleanupPublicMsg, publicMsgRoutes } from './publicMsg.js';
 
 initialize(dbPath);
@@ -22,6 +23,7 @@ const app = express();
 // Express read the real client IP from X-Forwarded-For for rate limiting,
 // without trusting an arbitrary forwarded header from the open internet.
 app.set('trust proxy', 'loopback');
+app.use('/api/belt-road', beltRoadRoutes(beltRoadDbPath));
 app.use('/api/publicMsg', express.json({ limit: '64kb' }), publicMsgRoutes(dbPath));
 app.use('/publicMsg', (req, res, next) => {
   res.set('Cache-Control', 'no-store');

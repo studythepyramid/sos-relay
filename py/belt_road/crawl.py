@@ -271,7 +271,7 @@ def main():
     parser.add_argument('--db', type=Path, default=ROOT / 'var/belt-road-crawl.db')
     sub = parser.add_subparsers(dest='command', required=True)
     crawl = sub.add_parser('run')
-    crawl.add_argument('--sources', type=Path, default=Path(__file__).with_name('sources.json'))
+    crawl.add_argument('--sources', type=Path, default=None)
     crawl.add_argument('--max-documents', type=int, choices=range(1, 21), default=6, metavar='1..20')
     crawl.add_argument('--max-depth', type=int, choices=[0, 1], default=1)
     crawl.add_argument('--delay', type=float, default=3)
@@ -285,7 +285,8 @@ def main():
         if args.command == 'run':
             if args.delay < 2 or not args.delay < 60:
                 parser.error('--delay must be at least 2 and below 60 seconds')
-            sources = json.loads(args.sources.read_text())
+            sources_file = args.sources or args.db.parent / 'sources.json'
+            sources = json.loads(sources_file.read_text())
             print(json.dumps(run(db, sources, Fetcher(args.delay), args.max_documents, args.max_depth)))
         elif args.command == 'retry-failed':
             with db:

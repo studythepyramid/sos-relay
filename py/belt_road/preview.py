@@ -4,12 +4,33 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import shutil
 import tempfile
+import json
+import sqlite3
+from urllib.parse import urlsplit
+from catalog import DEFAULT_DB, validate
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if urlsplit(self.path).path == '/api/belt-road/cases':
+            try:
+                with sqlite3.connect(DEFAULT_DB.resolve().as_uri() + '?mode=ro', uri=True) as db:
+                    rows = db.execute('SELECT published_json,published_at FROM br_cases WHERE published_json IS NOT NULL ORDER BY id LIMIT 501').fetchall()
+                cases = [{**validate(json.loads(payload)), 'reviewed_at': reviewed} for payload, reviewed in rows[:500]]
+                result = {'schema_version': 1, 'generated_at': max((c['reviewed_at'] for c in cases), default=''), 'cases': cases, 'has_more': len(rows)>500, 'limit': 500}
+                status = 200
+            except (sqlite3.Error, ValueError, TypeError):
+                result, status = {'error': 'Published reports unavailable'}, 503
+            body = json.dumps(result).encode()
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if self.path in ('/', '/map/'):
             self.send_response(302)
             self.send_header('Location', 'http://127.0.0.1:8001/' if self.path == '/' else 'http://127.0.0.1:18188/map/')

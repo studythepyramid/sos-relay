@@ -184,3 +184,12 @@ upgrade or production deployment has been performed. Case pages remain at
 /belt-road/?case=<id>, ready for later argument targeting by stable content ID.
 The initial SQLite database is separate from user messages; later normalization
 and viewport APIs replace the small static JSON projection as coverage grows.
+
+## Architecture correction — server-owned catalogue
+
+User requirement: no database files or scraped map data in GitHub. /belt-road/
+reads GET /api/belt-road/cases from the reviewed SQLite catalogue on lightsail.a.
+The collection database and catalogue remain separate, outside static roots.
+Publishing and withdrawing cases update SQLite and take effect on the next API
+request; they do not require a Git push, JSON export or site rebuild. Earlier
+static-export descriptions in this proposal are superseded by this correction.

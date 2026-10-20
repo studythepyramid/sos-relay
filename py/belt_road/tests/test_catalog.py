@@ -6,7 +6,20 @@ import unittest
 
 from catalog import connect, export_records, import_records, publish, validate, withdraw
 
-SEED = json.loads((Path(__file__).parents[1] / 'seed.json').read_text())[0]
+SEED = {
+    'id': 'fictional-test', 'title': 'Fictional fixture', 'country': 'Test country',
+    'summary': 'Synthetic test only', 'reported_on': '2025-01-01',
+    'current_status': 'Test fixture', 'communication': 'Synthetic communication',
+    'collection_method': 'manual_seed',
+    'location': {'latitude': 10, 'longitude': 20, 'precision': 'region', 'radius_m': 10000,
+                 'label': 'Synthetic region', 'basis': 'Test geometry'},
+    'sources': [
+        {'url': 'https://example.org/test', 'title': 'Synthetic source', 'publisher': 'Test publisher',
+         'published_on': '2025-01-01', 'accessed_on': '2025-01-02',
+         'kind': kind, 'supports': 'Synthetic test'}
+        for kind in ['victim_message_report', 'location_context']
+    ],
+}
 
 
 class CatalogTests(unittest.TestCase):

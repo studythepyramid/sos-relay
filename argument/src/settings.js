@@ -16,3 +16,6 @@ const parsed = parse(raw);
 export const dbPath = path.resolve(repoRoot, parsed.db_file ?? 'var/genone.db');
 export const port = parsed.port ?? 8000;
 export const siteDir = path.join(argumentDir, 'site');
+
+// Catalogue data is server-owned and never bundled into the static site.
+export const beltRoadDbPath = process.env.BELT_ROAD_DB_FILE || path.join(repoRoot, 'var/belt-road.db');

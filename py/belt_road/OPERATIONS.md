@@ -2,13 +2,13 @@
 
 Public page: https://sosweb.org/belt-road/
 
-The website shows only reviewed catalogue exports. The crawler's test results
+The website reads reviewed server-owned SQLite snapshots through /api/belt-road/cases. The crawler's test results
 are private and are inspected over SSH, not through a public admin endpoint.
 
 ## What this first crawler actually does
 
-Python standard library; compatible with the VPS's Python 3.11. Reads the small
-allowlisted sources.json registry, respects robots.txt, fetches bounded HTML/PDF
+Python standard library; compatible with the VPS's Python 3.11. Reads the server-owned
+/var/lib/sos-relay-crawler/sources.json allowlist, respects robots.txt, fetches bounded HTML/PDF
 responses, extracts HTML text and approved report links, and saves private
 research leads. Content hashes and source URLs are retained with each observation.
 
@@ -26,9 +26,9 @@ are crawl_jobs, crawl_documents and crawl_candidates. No public write API exists
 
 The root-owned systemd unit is versioned in deploy/sos-relay-crawler.service.
 A dedicated sos-crawler user owns only its private state directory. Read/write
-access to application state is blocked. Each service run attempts at most four
-source jobs, seed depth only, with 3-second minimum per-host spacing, 15-second
-request timeout, 4 MiB response limit, 128 MiB RAM limit and 180-second service
+access to application state is blocked. Each service run attempts at most twelve
+source jobs, up to one link level from each seed, with 3-second minimum per-host spacing, 15-second
+request timeout, 4 MiB response limit, 128 MiB RAM limit and 300-second service
 timeout. HTTP or robots failures are recorded rather than bypassed.
 
 ```bash
@@ -57,7 +57,7 @@ inspect actual source outcomes. No timer or unattended retry loop is enabled.
 From the local repository (this makes real network requests):
 
 ```bash
-uv run python py/belt_road/crawl.py --db /tmp/belt-road-crawl-test.db run --max-documents 4 --max-depth 0
+uv run python py/belt_road/crawl.py --db /tmp/belt-road-crawl-test.db run --sources /private/path/sources.json --max-documents 12 --max-depth 1
 uv run python py/belt_road/crawl.py --db /tmp/belt-road-crawl-test.db status
 uv run python py/belt_road/crawl.py --db /tmp/belt-road-crawl-test.db list
 ```
@@ -72,3 +72,7 @@ Reading raw extracted document text or inspecting the SQLite file should be done
 privately as the dedicated user. Do not copy crawl.db into docs/ or static output.
 A source that blocks the worker remains a failed/blocked source; request permitted
 access or select another source, rather than bypassing its restrictions.
+
+Case and discovery databases, extracted JSON and operational source configuration
+belong to server state, never GitHub. The API service environment drop-in is
+deploy/sos-relay-argument-belt-road.conf. See README.md for catalogue publication.
