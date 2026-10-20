@@ -50,6 +50,14 @@
   fallback. JavaScript syntax checks and MkDocs build passed. Runtime records and
   databases remain on Lightsail and were not added to Git.
 
+**Moved crawler information below the map.**
+
+- Put the live crawler count/classification summary, introduction and About
+  text in a footer below the map and unified location list. The map now begins
+  directly below the site header; all 127 source records remain available.
+- Checked desktop/mobile layout and retained record/skull counts in the browser.
+  JavaScript syntax and MkDocs build passed. No runtime database was changed.
+
 ## 2026-10-15
 
 Edited by za and Codex.

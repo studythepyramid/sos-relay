@@ -174,6 +174,14 @@
       if (data.schema_version !== 1 || !Array.isArray(url.endsWith('/cases') ? data.cases : data.discoveries)) throw new Error('Unsupported records');
       return data;
     }));
+    const crawlResult = results[1];
+    if (crawlResult.status === 'fulfilled') {
+      const rows = crawlResult.value.discoveries;
+      const documented = rows.filter(item => item.classification === 'source_documented').length;
+      $('crawler-summary').textContent = `Crawler discoveries ${rows.length} · ${documented} documented by source · ${rows.length - documented} suspected · awaiting review${crawlResult.value.has_more ? ' · showing first 500' : ''}`;
+    } else {
+      $('crawler-summary').textContent = 'Crawler summary temporarily unavailable. Retry loading locations.';
+    }
     cases = []; loadErrors = []; hasMore = false;
     let latest = '';
     results.forEach((result, index) => {

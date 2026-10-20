@@ -10,3 +10,5 @@ header{display:flex;align-items:center;gap:28px;background:var(--surface);paddin
 
 .skull-marker svg{width:16px;height:16px}.skull-marker{border-width:1px}.record-status{display:block;font-size:10px;color:var(--muted);margin-top:7px}#case-list{max-height:48dvh;overflow-y:auto;scrollbar-gutter:stable}.leaflet-popup-content{max-width:240px}.maplibregl-canvas{outline:0}
 @media(max-width:850px){#case-list{max-height:55dvh}}
+
+.workspace{padding-top:16px}.collection-footer{margin-top:20px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}.collection-footer>p{margin:0}.collection-footer .page-heading{padding:12px 0}.collection-footer .about{margin-top:0}
