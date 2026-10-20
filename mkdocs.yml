@@ -50,6 +50,7 @@ nav:
   # scripts/homepage.py supplies index.md from root-level za-index.md.
   - Home: index.md
   - SOS map (preview): map/index.html
+  - Belt & Road: belt-road/index.html
 
   # Categories is more important for me
   #

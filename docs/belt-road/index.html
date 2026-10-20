@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Belt &amp; Road · Public distress reports</title>
+  <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/belt-road.css">
+  <script defer src="../assets/leaflet/leaflet.js"></script>
+  <script defer src="../assets/belt-road.js"></script>
+</head>
+<body>
+  <header><a class="brand" href="../">✳ <span>SOS RELAY</span></a><h1>Belt &amp; Road</h1><a href="../map/"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#map-pin"></use></svg> SOS map <svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#external-link"></use></svg></a></header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">PUBLIC DISTRESS REPORTS</p><p class="intro">Reported pleas from people coerced into scam operations.</p></div><span class="collection-label">Public sources · no user submissions</span></div>
+    <div class="workspace">
+      <section class="map-panel" aria-label="Global map of public distress reports">
+        <div class="map-toolbar"><span class="legend"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#skull"></use></svg> Reported coercion · not a death count</span><button id="world-view" type="button"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#globe"></use></svg>World view</button></div>
+        <div id="belt-map" aria-label="Select a skull marker to read its public sources."></div>
+        <div class="map-footer"><p id="tile-status" role="status">Loading map…</p><span>Shaded area = approximate location</span></div>
+      </section>
+      <aside class="sidebar" aria-label="Reports and evidence">
+        <div class="search-row"><label for="case-search" class="sr-only">Search reports by name or place</label><input id="case-search" type="search" placeholder="Search name or place" autocomplete="off"><button id="fit-reports" type="button"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#map-pin"></use></svg>Show reports</button></div>
+        <div class="list-heading"><h2>Reports <span id="case-count">0</span></h2><span id="updated-label"></span></div>
+        <p id="data-status" role="status">Loading public records…</p><button id="retry-data" type="button" hidden>Retry loading reports</button>
+        <ul id="case-list"></ul>
+        <article id="case-detail" hidden tabindex="-1" aria-labelledby="case-title"></article>
+        <details class="about"><summary>About this map</summary><p>Skulls mark locations associated with public reports of coercion. They do not confirm deaths, present activity or guilt of everyone at a site.</p><p>Locations may be approximate. Source dates and precision are shown per report. The initial collection is small; an unmarked area does not mean it is safe.</p><p>Belt and Road relationships require separate evidence. Neither geography nor nationality establishes a connection.</p><p>Records are collected from public reporting and checked before a static export. No user messages, private victim identities or original leaked communications are hosted here.</p><p id="collection-note"></p></details>
+      </aside>
+    </div>
+  </main>
+  <noscript>JavaScript is required for the map. <a href="cases.json">Read the public source records as JSON</a>.</noscript>
+</body>
+</html>

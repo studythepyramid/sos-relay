@@ -34,6 +34,7 @@
   }
   function select(point, pan = false) {
     if (saving) return;
+    if ($('new-message')) $('new-message').open = true;
     latInput.value = String(point.lat);
     lngInput.value = String(point.lng);
     if (!map) return;
@@ -51,14 +52,18 @@
     }).addTo(map);
     let tileFailed = false;
     tiles.on('loading', () => { tileFailed = false; });
-    tiles.on('tileerror', () => { tileFailed = true; $('tile-status').textContent = 'Some map tiles could not load. Coordinates still work; this demo does not send an SOS.'; });
-    tiles.on('load', () => { if (!tileFailed) $('tile-status').textContent = 'Tap a location to place a pin. Drag it to adjust the exact position.'; });
+    tiles.on('tileerror', () => { tileFailed = true; $('tile-status').textContent = 'Map tiles unavailable. You can still enter coordinates.'; });
+    tiles.on('load', () => { if (!tileFailed) $('tile-status').textContent = 'Tap a marker to read a message; tap the map to add one.'; });
     map.on('click', event => select(event.latlng.wrap()));
     $('center-pin').addEventListener('click', () => { select(map.getCenter().wrap()); latInput.focus(); });
   } else {
     $('tile-status').textContent = 'The map library could not load. You can still try the form using coordinates.';
     $('center-pin').disabled = true;
   }
+  function showAllPins() {
+    if (map && markers.length) map.fitBounds(L.featureGroup(markers).getBounds(), { padding: [30, 30], maxZoom: 14, animate: false });
+  }
+  if ($('show-signals')) $('show-signals').addEventListener('click', showAllPins);
   $('use-coordinates').addEventListener('click', () => { const point = coordinates(); if (point) select(point, true); });
   $('message').addEventListener('input', () => { $('character-count').textContent = `${$('message').value.length} / 600`; $('message').setCustomValidity(''); });
   $('share-contact').addEventListener('change', event => {
@@ -69,16 +74,18 @@
   function element(tag, value) { const node = document.createElement(tag); node.textContent = value; return node; }
   function render(pin) {
     const card = document.createElement('li');
-    const link = element('button', `Saved test message · View location`);
+    let marker;
+    const link = element('button', 'View on map');
     link.type = 'button';
-    link.addEventListener('click', () => { if (map) { map.setView(pin, 14, { animate: false }); $('map').scrollIntoView({ block: 'center' }); } });
+    link.addEventListener('click', () => { if (map) { map.setView(pin, 14, { animate: false }); if (marker) marker.openPopup(); $('map').scrollIntoView({ block: 'center' }); } });
     link.disabled = !map;
-    card.append(link, element('p', pin.message), element('small', `${pin.lat}, ${pin.lng}`), element('small', `${pin.contact || 'Anonymous'} · ${new Date(pin.createdAt).toLocaleString()}`));
+    card.append(element('p', pin.message), link, element('small', new Date(pin.createdAt).toLocaleString()));
     $('signal-list').prepend(card);
     if (map) {
       const popup = document.createElement('div');
       popup.append(element('strong', 'Saved locally — no rescue dispatch'), element('p', pin.message), element('small', `${pin.lat}, ${pin.lng}\n${pin.contact || 'Anonymous'}\n${new Date(pin.createdAt).toLocaleString()}`));
-      markers.push(L.marker(pin, { icon: icon(true), title: 'Demo SOS signal' }).addTo(map).bindPopup(popup));
+      marker = L.marker(pin, { icon: icon(true), title: 'Saved test message' }).addTo(map).bindPopup(popup);
+      markers.push(marker);
     }
     $('signal-count').textContent = String(pins.length);
     $('empty-state').hidden = true;
@@ -103,6 +110,7 @@
     if (!response.ok) throw new Error(result.error || 'Database request failed.');
     return result;
   }
+  let initialView = true;
   async function loadPins() {
     if (loading) return;
     loading = true;
@@ -122,10 +130,11 @@
       [...pins].reverse().forEach(render);
       $('signal-count').textContent = String(pins.length);
       $('empty-state').hidden = pins.length > 0;
-      $('empty-state').textContent = 'No saved test messages yet. Choose a location to try the flow.';
-      status.textContent = `Loaded ${pins.length} saved test messages from the local database.`;
+      $('empty-state').textContent = 'No messages yet. Add a test message to place a marker.';
+      if (initialView) { showAllPins(); initialView = false; }
+      status.textContent = '';
     } catch (error) {
-      status.textContent = `Could not load saved messages: ${error.message} Use Reload saved messages to retry.`;
+      status.textContent = `Could not load saved messages: ${error.message} Refresh to retry.`;
       $('empty-state').textContent = 'Saved messages could not be loaded.';
     } finally {
       loading = false;
@@ -167,7 +176,8 @@
       form.reset();
       $('contact-label').hidden = true;
       $('character-count').textContent = '0 / 600';
-      status.textContent = 'Saved to genone.db. This test message survives reload; it is not a public SOS. Location restrictions were not checked.';
+      status.textContent = 'Test message saved locally. No rescue dispatch.';
+      if ($('new-message')) $('new-message').open = false;
       saved = true;
     } catch (error) {
       status.textContent = `Save not confirmed: ${error.message} Your draft is retained. Retry unchanged to avoid duplicate messages.`;
