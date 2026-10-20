@@ -35,6 +35,21 @@
 - Validation: 22 Python tests and 18 Node tests passed. JavaScript syntax and
   the MkDocs build were checked; no collected records were added to Git.
 
+**Unified the Belt & Road map and added English-first labels.**
+
+- Replaced the separate Reports/Discoveries panels with one 127-record location
+  list, search, detail view and Show all control. Every source record has a small
+  skull; source classifications and pending-review status remain visible.
+- Added OpenFreeMap's OpenStreetMap-based vector basemap through locally pinned
+  MapLibre/Leaflet browser assets with their licenses and visible attribution.
+  Labels prefer English, then Latin-script/local names where English is missing.
+  No account, API key or paid service was added. A disclosed standard OSM fallback
+  remains available automatically if English rendering cannot load.
+- Browser checks passed for unified counts/markers, evidence-status searches,
+  citations, deep links, mobile layout, independent API failure/retry, and map
+  fallback. JavaScript syntax checks and MkDocs build passed. Runtime records and
+  databases remain on Lightsail and were not added to Git.
+
 ## 2026-10-15
 
 Edited by za and Codex.

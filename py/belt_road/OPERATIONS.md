@@ -109,9 +109,9 @@ source/message/location and disclosure review under the existing map criteria.
 
 ## Publish attributed discoveries separately
 
-The public page can show unreviewed, publisher-attributed discoveries as amber
-circles and a source list, distinct from skull reports. Collection alone never
-writes this public projection. After checking the source, an operator runs:
+The public page includes publisher-attributed discoveries in the same skull map
+and location list, with their evidence and review status attached. Collection
+alone never writes this public projection. After checking the source, an operator runs:
 
 ```bash
 sudo python3 /opt/sos-relay/py/belt_road/publish_discoveries.py \

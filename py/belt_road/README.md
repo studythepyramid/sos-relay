@@ -20,16 +20,27 @@ needed to add, revise or withdraw a published case.
   path comes from BELT_ROAD_DB_FILE. The service opens it read-only per request
   and returns an explicit field allowlist from published_json only.
 - `docs/belt-road/`: HTML only; no case export is bundled or used as a fallback.
-- `docs/assets/belt-road.js`: fetches the API, displays source-attributed skulls,
-  groups screen collisions with count badges and preserves `?case=<id>` links.
+- `docs/assets/belt-road.js`: fetches both public APIs into one location list,
+  displays a small skull per source record and preserves `?case=<id>` links.
 
 The separate `/api/belt-road/discoveries` endpoint reads an operator-published
 `br_discoveries(id, public_json, published_at)` projection in the same catalogue.
-It never opens the private crawler DB. The page shows a discovery count, an
-expandable source list, and amber circle markers: solid for publisher-documented,
-dashed for publisher-suspected. These remain `needs_review`, with public-message
-evidence `not_assessed`; they are not reviewed skull reports. Classification is
-the publisher's historical assessment, not a current danger finding.
+It never opens the private crawler DB. The page merges both projections into one
+search, count, list, detail view and map; there are no separate user-facing
+Reports/Discoveries categories. Each source record has a small skull and an evidence
+label. Crawler records remain `needs_review`, with public-message evidence
+`not_assessed`, even when presented together. Classification is the publisher's
+historical assessment, not a current danger finding. Several records can describe
+the same location; counts are records, not unique events or victim totals.
+
+The basemap uses locally pinned MapLibre GL JS and its Leaflet adapter with the
+OpenFreeMap Positron style. Name labels prefer `name:en`/`name_en`, then
+`name:latin`, then `name`; road reference shields stay unchanged. English country
+and city names are shown where available in OpenStreetMap data. Leaflet still
+handles markers, selection, pan and zoom. Required map attribution remains
+visible. If the vector style/WebGL is unavailable, a clearly disclosed standard
+OSM raster fallback preserves map usability. Both public API failures are
+independent: the available subset stays visible with a retry control.
 
 `publish_discoveries.py` validates the supported report totals and stored page
 references, then copies only site codes, classifications, citations and locations
