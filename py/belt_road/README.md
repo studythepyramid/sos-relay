@@ -92,3 +92,11 @@ content ID is belt-road:<case-id>, and canonical URLs remain /belt-road/?case=ID
 See OPERATIONS.md for the Lightsail crawler service and CRAWLER.md for its intended
 expansion. No schedule is enabled. Lucide icons are vendored code assets with the
 license retained in docs/assets/icons/; pages do not depend on the local symlink.
+
+## Report profile adapter
+
+The collection worker now supports a source-coded site table adapter in profiles.py.
+It stores distinct site candidates and page evidence in the private discovery DB,
+with documented/suspected publisher classifications kept separate. The target
+counts these sites rather than documents. It does not publish them to the map.
+See OPERATIONS.md for target limits, Poppler and private inspection commands.

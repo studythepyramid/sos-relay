@@ -1,5 +1,27 @@
 # SOS Relay — project log
 
+## 2026-10-20
+
+**Belt & Road crawler collected 122 distinct site candidates on Lightsail.**
+
+- Reached the 100-candidate target using Amnesty International's 2026
+  Cambodia report: 86 publisher-documented sites and 36 suspected sites.
+  These are source classifications, not independent verification by SOS Relay.
+- Added source-code deduplication, PDF page references, bounded PDF parsing,
+  private artifact storage, and a target-based stopping condition. All 122
+  candidates remain `needs_review`; public victim-message evidence has not
+  been assessed. The public map still contains five reviewed cases.
+- Crawl state, source configuration, report artifacts, and the published
+  SQLite catalogue stay on Lightsail. No database or scraped records were
+  added to Git. The API reads the server-owned published catalogue.
+- Updated the manual crawler service to target 100 candidates with memory,
+  CPU, and runtime limits. No recurring crawl schedule was enabled.
+- Set both map brand links and the documentation homepage explicitly to
+  `https://sosweb.org/` so they do not inherit a localhost preview origin.
+- Validation: 20 Python tests passed, MkDocs built successfully, and the
+  generated homepage, map, Belt & Road, and documentation logo links were
+  checked. The crawl completed with 122 distinct keys and 122 page references.
+
 ## 2026-10-15
 
 Edited by za and Codex.

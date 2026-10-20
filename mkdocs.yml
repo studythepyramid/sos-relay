@@ -1,7 +1,11 @@
 site_name: SOS Relay
+site_url: https://sosweb.org/
 site_description: Signal relay and knowledge base for emergency communication under shutdown/censorship conditions.
 docs_dir: docs
 site_dir: site
+
+extra:
+  homepage: https://sosweb.org/
 
 theme:
   name: material

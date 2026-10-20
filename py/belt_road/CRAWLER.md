@@ -136,3 +136,12 @@ locations and the distinction between victim messages and survivor interviews.
 - Scrapy throttling: https://docs.scrapy.org/en/latest/topics/autothrottle.html
 - Scrapy robots settings: https://docs.scrapy.org/en/latest/topics/settings.html#robotstxt-obey
 - Scrapy export: https://docs.scrapy.org/en/latest/topics/feed-exports.html
+
+## Implemented collection increment
+
+A supported PDF adapter can extract coded site rows with page-level provenance.
+It preserves publisher classifications and checks table counts before importing.
+Site candidates are separate from document leads and from the published map DB.
+A --target-cases stop condition now counts distinct source-coded sites; fetching
+100 documents is not represented as obtaining 100 distinct cases. Records, source
+configuration and report artifacts stay on Lightsail, outside Git.
