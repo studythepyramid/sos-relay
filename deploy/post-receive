@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+# Selective push-to-deploy hook. Install as <bare-repo>/hooks/post-receive.
+set -euo pipefail
+
+repo=$(git rev-parse --absolute-git-dir)
+worktree=${SOS_DEPLOY_WORKTREE:-/opt/sos-relay}
+state="$repo/sos-deployed-revision"
+uv=${SOS_DEPLOY_UV:-$HOME/.local/bin/uv}
+force=0
+target=
+
+if [[ ${1:-} == --full ]]; then
+    force=1
+    target=$(git --git-dir="$repo" rev-parse refs/heads/main)
+else
+    while read -r old new ref; do
+        if [[ $ref == refs/heads/main && ! $new =~ ^0+$ ]]; then
+            target=$new
+        fi
+    done
+fi
+[[ -n $target ]] || exit 0
+
+# Serialize worktree changes, builds and the successful-deployment marker.
+exec 9>"$repo/sos-deploy.lock"
+flock 9
+latest=$(git --git-dir="$repo" rev-parse refs/heads/main)
+if [[ $target != "$latest" ]]; then
+    echo 'deploy: superseded main update; newer push will deploy'
+    exit 0
+fi
+
+python_sync=0
+node_install=0
+site_build=0
+node_restart=0
+tts_fetch=0
+base=
+if [[ -f $state ]]; then
+    read -r base < "$state" || base=
+fi
+if (( force )) || [[ -z $base ]] || ! git --git-dir="$repo" cat-file -e "$base^{commit}" 2>/dev/null; then
+    python_sync=1 node_install=1 site_build=1 node_restart=1 tts_fetch=1
+else
+    while IFS= read -r -d '' path; do
+        case "$path" in
+            pyproject.toml|uv.lock|.python-version)
+                python_sync=1 ;;
+        esac
+        case "$path" in
+            argument/package.json|argument/package-lock.json|argument/.npmrc)
+                node_install=1 node_restart=1 ;;
+        esac
+        case "$path" in
+            docs/*|overrides/*|mkdocs.yml|mkdocs.yaml|za-index.md|scripts/homepage.py|scripts/build-site.sh)
+                site_build=1 ;;
+        esac
+        case "$path" in
+            argument/src/*|argument/settings.toml)
+                node_restart=1 ;;
+        esac
+        case "$path" in
+            scripts/fetch-tts-assets.sh)
+                tts_fetch=1 site_build=1 ;;
+        esac
+    done < <(git --git-dir="$repo" diff --no-renames --name-only -z "$base" "$target" --)
+fi
+
+mkdir -p "$worktree"
+# Check out this exact commit without changing the bare repo's main HEAD.
+# read-tree also removes tracked files deleted by this commit, preserving runtime files.
+git --git-dir="$repo" --work-tree="$worktree" read-tree --reset -u "$target"
+cd "$worktree"
+
+# Bootstrap/recover missing build artifacts even if the push only changes a crawler.
+[[ -x .venv/bin/python ]] || python_sync=1
+[[ -d argument/node_modules ]] || { node_install=1; node_restart=1; }
+[[ -f site/index.html ]] || site_build=1
+if (( site_build )) && [[ ! -d docs/assets/tts/vits-piper-en_US-amy-low-int8 ]]; then
+    tts_fetch=1
+fi
+
+echo "deploy: python_sync=$python_sync node_install=$node_install site_build=$site_build node_restart=$node_restart tts_fetch=$tts_fetch"
+trap 'echo "deploy: failed; successful-deployment marker unchanged" >&2' ERR
+if (( python_sync )); then
+    "$uv" sync --locked
+fi
+if (( tts_fetch )); then
+    bash scripts/fetch-tts-assets.sh
+fi
+if (( site_build )); then
+    bash scripts/build-site.sh
+fi
+if (( node_install )); then
+    (cd argument && npm ci --omit=dev)
+fi
+if (( node_restart )); then
+    sudo systemctl restart sos-relay-argument
+fi
+
+# Keep the installed hook in step with its versioned source for subsequent pushes.
+if [[ -f deploy/post-receive ]]; then
+    install -m 0755 deploy/post-receive "$repo/hooks/post-receive.next"
+    mv "$repo/hooks/post-receive.next" "$repo/hooks/post-receive"
+fi
+printf '%s\n' "$target" > "$state.next"
+mv "$state.next" "$state"
+echo "deploy: complete ${target:0:7}"

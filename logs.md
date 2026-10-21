@@ -21,6 +21,21 @@
   integration), JavaScript syntax and MkDocs build passed. Runtime data and
   databases remain server-owned and excluded from Git.
 
+**Made Git deployments selective for faster crawler updates.**
+
+- Added a versioned post-receive hook that compares against the last successful
+  deployment. Crawler Python updates only refresh the checkout; Python/Node
+  dependency updates, MkDocs builds, TTS assets and API restarts run only when
+  their inputs change or required artifacts are missing.
+- Serialized deployments, skipped superseded/non-main pushes, and retained the
+  successful revision on failure so later pushes retry unfinished steps.
+- Installed the hook on Lightsail with the old hook backed up. Crawl data and
+  SQLite remain outside Git and need no deployment. Updated env.cmd.md and the
+  crawler README with the normal push command and optional full rebuild.
+- Validation: ten isolated Git/deployment integration tests and Bash syntax
+  passed, covering crawler-only updates, site/backend/dependency changes,
+  deletions, superseded pushes, missing output and failed-deployment recovery.
+
 ## 2026-10-20
 
 **Belt & Road crawler collected 122 distinct site candidates on Lightsail.**

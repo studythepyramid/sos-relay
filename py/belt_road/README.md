@@ -95,6 +95,12 @@ Collected records, source configuration, artifacts and DB files stay on the
 server, outside the static document root and outside Git. Code deployment does
 not carry or replace map data.
 
+To deploy crawler code, commit it and use `git push production main`. The VPS
+hook updates Python source without rebuilding the website or restarting the API.
+Changes to `pyproject.toml`/`uv.lock` also refresh the Python environment. Updating
+source URLs, keywords or collected data on the VPS needs no Git push; reloading
+the map reads the current DB. Deployment details are in root `env.cmd.md`.
+
 ## Sources, retries and extraction limits
 
 Edit `/var/lib/sos-relay/belt-road/sources.json` as `admin` to add sources or seeds.

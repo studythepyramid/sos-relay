@@ -96,8 +96,28 @@ add it to the real command. It deletes destination-only entries within
 
 ## Build the static site
 
-The VPS deployment script is `/opt/sos-relay.git/hooks/post-receive`.
-Its static-site build step runs in `/opt/sos-relay`:
+The VPS deployment hook is versioned as `deploy/post-receive` and installed at
+`/opt/sos-relay.git/hooks/post-receive`. Keep deploying with `git push production
+main`; the hook updates the checkout and only runs the affected steps:
+
+- Python crawler/source changes: checkout only, without a site build or restart.
+- `pyproject.toml`, `uv.lock`, `.python-version`: synchronize Python dependencies.
+- MkDocs inputs (`docs/`, theme overrides, configuration, homepage source/hooks):
+  rebuild the static site.
+- Node dependency files: install production dependencies and restart the API.
+- Node source/settings: restart the API without reinstalling dependencies.
+- Directly served `argument/site/` files: checkout makes them available immediately.
+- Crawl data, new URLs and keywords stored on the VPS: no Git deployment at all.
+
+Python dependency updates alone do not regenerate existing static output; rebuild
+manually if a MkDocs dependency upgrade should also regenerate the pages. TTS
+assets are checked when their fetching script changes or a site build needs
+missing assets. Missing environments/site output trigger the necessary recovery
+steps. Deployment runs are serialized, and the last successful commit is recorded
+in `/opt/sos-relay.git/sos-deployed-revision`; a failed step is retried on the next
+push, even if that push changes unrelated files.
+
+The static-site build step runs in `/opt/sos-relay`. To rebuild it manually:
 
 ```bash
 ssh lightsail.a 'cd /opt/sos-relay && bash scripts/build-site.sh'
@@ -106,6 +126,15 @@ ssh lightsail.a 'cd /opt/sos-relay && bash scripts/build-site.sh'
 This rebuilds `/opt/sos-relay/site/`, which Caddy serves immediately.
 Use it after changing MkDocs pages, assets, or `mkdocs.yml`. Directly served
 notes under `/my/md/` do not require this build.
+
+To deliberately rerun all deployment steps for the current main revision:
+
+```bash
+ssh lightsail.a 'cd /opt/sos-relay.git && bash hooks/post-receive --full'
+```
+
+The hook updates its installed copy from the versioned source after a successful
+deployment. Runtime SQLite, artifacts and source lists are never copied by it.
 
 The deployment hook calls `scripts/build-site.sh`, which runs
 `uv run mkdocs build`. The configured `scripts/homepage.py` hook supplies
