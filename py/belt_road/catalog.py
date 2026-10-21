@@ -1,4 +1,4 @@
-"""Private collection queue and reviewed static export for /belt-road/. No network fetches."""
+"""Legacy catalogue helpers retained for old-data tests; retired from the live pipeline."""
 import argparse
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
@@ -224,4 +224,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit('Legacy catalogue commands are retired. Run crawl.py directly; see README.md.')

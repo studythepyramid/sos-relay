@@ -7,22 +7,22 @@ import tempfile
 import json
 import sqlite3
 from urllib.parse import urlsplit
-from catalog import DEFAULT_DB, validate
+from store import DEFAULT_DB, clean_record
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        if urlsplit(self.path).path == '/api/belt-road/cases':
+        if urlsplit(self.path).path == '/api/belt-road/locations':
             try:
                 with sqlite3.connect(DEFAULT_DB.resolve().as_uri() + '?mode=ro', uri=True) as db:
-                    rows = db.execute('SELECT published_json,published_at FROM br_cases WHERE published_json IS NOT NULL ORDER BY id LIMIT 501').fetchall()
-                cases = [{**validate(json.loads(payload)), 'reviewed_at': reviewed} for payload, reviewed in rows[:500]]
-                result = {'schema_version': 1, 'generated_at': max((c['reviewed_at'] for c in cases), default=''), 'cases': cases, 'has_more': len(rows)>500, 'limit': 500}
+                    rows = db.execute('SELECT record_json,updated_at FROM map_locations WHERE hidden=0 ORDER BY id LIMIT 501').fetchall()
+                cases = [{**clean_record(json.loads(payload)), 'updated_at': updated} for payload, updated in rows[:500]]
+                result = {'schema_version': 1, 'generated_at': max((c['updated_at'] for c in cases), default=''), 'locations': cases, 'has_more': len(rows)>500, 'limit': 500}
                 status = 200
             except (sqlite3.Error, ValueError, TypeError):
-                result, status = {'error': 'Published reports unavailable'}, 503
+                result, status = {'error': 'Locations unavailable'}, 503
             body = json.dumps(result).encode()
             self.send_response(status)
             self.send_header('Content-Type', 'application/json')
@@ -33,7 +33,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         if self.path in ('/', '/map/'):
             self.send_response(302)
-            self.send_header('Location', 'http://127.0.0.1:8001/' if self.path == '/' else 'http://127.0.0.1:18188/map/')
+            self.send_header('Location', 'https://sosweb.org/' if self.path == '/' else 'https://sosweb.org/map/')
             self.end_headers()
             return
         super().do_GET()
@@ -48,7 +48,8 @@ def main():
         shutil.copytree(ROOT / 'docs/belt-road', target / 'belt-road')
         shutil.copytree(ROOT / 'docs/assets/leaflet', target / 'assets/leaflet')
         shutil.copytree(ROOT / 'docs/assets/icons', target / 'assets/icons')
-        for name in ['belt-road.css', 'belt-road.js']:
+        shutil.copytree(ROOT / 'docs/assets/maplibre', target / 'assets/maplibre')
+        for name in ['belt-road.css', 'belt-road.js', 'english-basemap.js']:
             shutil.copy2(ROOT / 'docs/assets' / name, target / 'assets' / name)
         with ThreadingHTTPServer(('127.0.0.1', 18189), partial(Handler, directory=directory)) as server:
             print('Belt & Road preview: http://127.0.0.1:18189/belt-road/', flush=True)

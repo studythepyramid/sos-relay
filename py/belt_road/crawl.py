@@ -1,5 +1,8 @@
-"""Bounded public-source research crawler. Never writes the map publication catalogue."""
+"""Foreground source crawler: save progress, documents and map locations in one SQLite DB."""
 import argparse
+from contextlib import contextmanager
+import fcntl
+import signal
 from datetime import datetime, timezone
 import hashlib
 from html.parser import HTMLParser
@@ -12,9 +15,10 @@ import sqlite3
 import time
 import subprocess
 from profiles import extract_profiles, save_cases
+from store import DEFAULT_DB, schema, profile_record, save_location
 from urllib import error, parse, request, robotparser
 
-VERSION = '2'
+VERSION = '3'
 ROOT = Path(__file__).resolve().parents[2]
 USER_AGENT = 'SOSRelayResearch/0.1 (+https://sosweb.org/belt-road/)'
 MAX_BYTES = 4 * 1024 * 1024
@@ -100,7 +104,7 @@ class TextPage(HTMLParser):
 def connect(path):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(path, timeout=10)
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA journal_mode=WAL')
     db.executescript('''
@@ -117,9 +121,7 @@ def connect(path):
         );
         CREATE TABLE IF NOT EXISTS crawl_site_cases (
             case_key TEXT PRIMARY KEY, site_code TEXT NOT NULL, country TEXT NOT NULL,
-            evidence_level TEXT NOT NULL CHECK(evidence_level IN ('source_documented','source_suspected')),
-            review_status TEXT NOT NULL DEFAULT 'needs_review',
-            message_evidence TEXT NOT NULL DEFAULT 'not_assessed'
+            evidence_level TEXT NOT NULL CHECK(evidence_level IN ('source_documented','source_suspected'))
         );
         CREATE TABLE IF NOT EXISTS crawl_site_evidence (
             case_key TEXT NOT NULL REFERENCES crawl_site_cases(case_key),
@@ -130,10 +132,16 @@ def connect(path):
         CREATE TABLE IF NOT EXISTS crawl_candidates (
             id INTEGER PRIMARY KEY, document_id INTEGER NOT NULL REFERENCES crawl_documents(id),
             terms_json TEXT NOT NULL, evidence_kind TEXT NOT NULL DEFAULT 'research_lead',
-            review_status TEXT NOT NULL DEFAULT 'needs_review',
             UNIQUE(document_id)
         );
     ''')
+    for table, columns in [('crawl_site_cases', ('review_status', 'message_evidence')),
+                           ('crawl_candidates', ('review_status',))]:
+        existing = {row[1] for row in db.execute(f'PRAGMA table_info({table})')}
+        for column in columns:
+            if column in existing:
+                db.execute(f'ALTER TABLE {table} DROP COLUMN {column}')
+    schema(db)
     db.execute('PRAGMA foreign_keys=ON')
     return db
 
@@ -212,18 +220,67 @@ def discover_links(page, base, source):
             yield canonical(target)
 
 
-def run(db, sources, fetcher, limit=6, max_depth=1, target_cases=None, artifacts=None, progress=None):
+class CrawlTimeLimit(Exception):
+    pass
+
+
+@contextmanager
+def time_limit(seconds):
+    # A wall-clock bound also interrupts network waits and PDF extraction on Linux.
+    previous = signal.getsignal(signal.SIGALRM)
+    def expired(_signum, _frame):
+        raise CrawlTimeLimit()
+    signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
+@contextmanager
+def crawl_lock(path):
+    with open(path, 'a') as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Another foreground crawl is already running for this database') from None
+        yield
+
+
+def run(db, sources, fetcher, limit=6, max_depth=1, max_new_sites=None,
+        artifacts=None, progress=None, max_seconds=600):
+    counts = {'jobs_attempted': 0, 'fetched': 0, 'blocked': 0, 'failed': 0,
+              'leads': 0, 'site_cases_added': 0, 'locations_added': 0,
+              'locations_updated': 0, 'stop_reason': 'job_limit'}
+    started = time.monotonic()
+    try:
+        with time_limit(max_seconds):
+            _run(db, sources, fetcher, limit, max_depth, max_new_sites, artifacts, progress, counts)
+    except CrawlTimeLimit:
+        db.rollback()
+        counts['stop_reason'] = 'time_limit'
+    except KeyboardInterrupt:
+        db.rollback()
+        counts['stop_reason'] = 'interrupted'
+    counts['elapsed_seconds'] = round(time.monotonic() - started, 2)
+    return counts
+
+
+def _run(db, sources, fetcher, limit, max_depth, max_new_sites, artifacts, progress, counts):
     by_id = {source['id']: source for source in sources}
     for source in sources:
         for seed in source['seeds']:
             enqueue(db, source, seed)
     db.commit()
-    counts = {'fetched': 0, 'blocked': 0, 'failed': 0, 'leads': 0, 'site_cases_added': 0}
     for _ in range(limit):
-        if target_cases is not None and db.execute('SELECT count(*) FROM crawl_site_cases').fetchone()[0] >= target_cases:
+        if max_new_sites is not None and counts['locations_added'] >= max_new_sites:
+            counts['stop_reason'] = 'new_site_limit'
             break
         row = db.execute("SELECT * FROM crawl_jobs WHERE status='queued' ORDER BY depth,id LIMIT 1").fetchone()
         if not row:
+            counts['stop_reason'] = 'queue_empty'
             break
         source = by_id.get(row['source_id'])
         if source is None:
@@ -231,6 +288,7 @@ def run(db, sources, fetcher, limit=6, max_depth=1, target_cases=None, artifacts
             db.execute("UPDATE crawl_jobs SET status='disabled' WHERE id=?", (row['id'],))
             db.commit()
             continue
+        counts['jobs_attempted'] += 1
         try:
             if progress:
                 progress({'source': row['source_id'], 'job_id': row['id'], 'state': 'fetching'})
@@ -270,19 +328,31 @@ def run(db, sources, fetcher, limit=6, max_depth=1, target_cases=None, artifacts
                     VALUES(?,?,?,?,?,?,?,?)''',
                            (row['id'], final_url, now(), mime, digest, title, extracted, VERSION))
                 document = db.execute('SELECT id FROM crawl_documents WHERE job_id=? AND content_hash=?', (row['id'], digest)).fetchone()[0]
-                counts['site_cases_added'] += save_cases(db, document, site_cases)
+                site_added = save_cases(db, document, site_cases)
+                location_changes = {'added': 0, 'updated': 0, 'unchanged': 0}
+                for item in site_cases:
+                    change = save_location(db, profile_record(item, final_url,
+                        source.get('publisher', 'Amnesty International'),
+                        source.get('report_title', 'Falling Through the Cracks (2026)')))
+                    location_changes[change] += 1
                 terms = [term for term in TERMS if term in extracted.lower()]
+                leads_added = 0
                 if terms or mime == 'application/pdf':
                     before = db.total_changes
                     db.execute('INSERT OR IGNORE INTO crawl_candidates(document_id,terms_json) VALUES(?,?)', (document, json.dumps(terms)))
-                    counts['leads'] += db.total_changes - before
+                    leads_added = db.total_changes - before
                 if page and row['depth'] < max_depth:
                     for link in list(dict.fromkeys(discover_links(page, final_url, source)))[:20]:
                         enqueue(db, source, link, row['depth'] + 1, row['url'])
                 db.execute("UPDATE crawl_jobs SET status='fetched',fetched_at=?,last_error=NULL,attempts=attempts+1 WHERE id=?", (now(), row['id']))
+            counts['leads'] += leads_added
+            counts['site_cases_added'] += site_added
+            counts['locations_added'] += location_changes['added']
+            counts['locations_updated'] += location_changes['updated']
             counts['fetched'] += 1
             if progress:
-                progress({'job_id': row['id'], 'state': 'fetched', 'site_cases_added': len(site_cases)})
+                progress({'job_id': row['id'], 'state': 'fetched',
+                          'locations_added': location_changes['added'], 'locations_updated': location_changes['updated']})
         except (OSError, ValueError, error.URLError, subprocess.SubprocessError) as exc:
             # Avoid dumping response bodies, query strings or extracted text into logs.
             message = f'HTTP {exc.code}' if isinstance(exc, error.HTTPError) else str(exc)[:200] if isinstance(exc, ValueError) else type(exc).__name__
@@ -301,22 +371,25 @@ def status(db):
         'research_leads': db.execute('SELECT count(*) FROM crawl_candidates').fetchone()[0],
         'site_cases': db.execute('SELECT count(*) FROM crawl_site_cases').fetchone()[0],
         'site_case_classifications': dict(db.execute('SELECT evidence_level,count(*) FROM crawl_site_cases GROUP BY evidence_level').fetchall()),
-        'published_by_crawler': 0,
+        'map_locations': db.execute('SELECT count(*) FROM map_locations WHERE hidden=0').fetchone()[0],
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--db', type=Path, default=ROOT / 'var/belt-road-crawl.db')
+    parser.add_argument('--db', type=Path, default=DEFAULT_DB)
     sub = parser.add_subparsers(dest='command', required=True)
     crawl = sub.add_parser('run')
     crawl.add_argument('--sources', type=Path, default=None)
-    crawl.add_argument('--max-documents', type=int, choices=range(1, 501), default=6, metavar='1..500')
+    crawl.add_argument('--max-jobs', '--max-documents', dest='max_documents', type=int, choices=range(1, 501), default=6, metavar='1..500')
     crawl.add_argument('--max-depth', type=int, choices=[0, 1], default=1)
     crawl.add_argument('--delay', type=float, default=3)
-    crawl.add_argument('--target-cases', type=int, choices=range(1, 10001), metavar='1..10000')
+    crawl.add_argument('--max-seconds', type=int, choices=range(1, 86401), default=600, metavar='1..86400')
+    crawl.add_argument('--max-new-sites', type=int, choices=range(1, 10001), metavar='1..10000')
     crawl.add_argument('--artifacts', type=Path)
     sub.add_parser('status')
+    requeue = sub.add_parser('requeue', help='Fetch a completed source again, for example after an adapter update')
+    requeue.add_argument('job_id', type=int)
     sub.add_parser('retry-failed')
     site_listing = sub.add_parser('cases')
     site_listing.add_argument('--limit', type=int, default=20)
@@ -331,11 +404,17 @@ def main():
                 parser.error('--delay must be at least 2 and below 60 seconds')
             sources_file = args.sources or args.db.parent / 'sources.json'
             sources = json.loads(sources_file.read_text())
-            print(json.dumps(run(db, sources, Fetcher(args.delay), args.max_documents, args.max_depth,
-                target_cases=args.target_cases, artifacts=args.artifacts or args.db.parent / 'artifacts',
-                progress=lambda event: print(json.dumps(event), flush=True))))
+            with crawl_lock(args.db.parent / 'crawl.lock'):
+                print(json.dumps(run(db, sources, Fetcher(args.delay), args.max_documents, args.max_depth,
+                    max_new_sites=args.max_new_sites, max_seconds=args.max_seconds,
+                    artifacts=args.artifacts or args.db.parent / 'artifacts',
+                    progress=lambda event: print(json.dumps(event), flush=True))), flush=True)
+        elif args.command == 'requeue':
+            with crawl_lock(args.db.parent / 'crawl.lock'), db:
+                changed = db.execute("UPDATE crawl_jobs SET status='queued',last_error=NULL WHERE id=? AND status!='blocked'", (args.job_id,)).rowcount
+            print(json.dumps({'requeued': changed}))
         elif args.command == 'retry-failed':
-            with db:
+            with crawl_lock(args.db.parent / 'crawl.lock'), db:
                 changed = db.execute("UPDATE crawl_jobs SET status='queued' WHERE status='failed' AND attempts<3").rowcount
             print(json.dumps({'requeued': changed, 'attempt_limit': 3}))
         elif args.command == 'cases':

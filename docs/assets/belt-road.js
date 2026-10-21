@@ -8,11 +8,11 @@
     if (className) node.className = className;
     return node;
   };
+  const warning = 'Source-reported information. Please check the facts yourself; locations may be approximate.';
   const skull = '<svg aria-hidden="true" viewBox="0 0 24 24"><use href="../assets/icons/lucide.svg#skull"></use></svg>';
   let map, layers, cases = [], filtered = [], selectedId = null;
   let loading = false;
   let selectedArea = null;
-  let loadErrors = [];
   let hasMore = false;
   const markers = new Map();
   const world = () => { if (map) map.setView([18, 20], 2, { animate: false }); };
@@ -56,10 +56,10 @@
     });
     actions.append(close, make('span', `Source date ${item.reported_on}`));
     const title = make('h2', item.title); title.id = 'case-title';
-    detail.append(actions, title, make('span', item.evidence_status, 'status-tag'), make('p', item.summary));
-    detail.append(make('h3', 'Evidence'), make('p', item.communication), make('p', item.current_status));
+    detail.append(actions, title, make('p', warning), make('p', item.summary));
+    if (item.communication) detail.append(make('p', item.communication));
+    if (item.current_status) detail.append(make('p', item.current_status));
     detail.append(make('h3', 'Location'), make('p', `${item.location.label}. ${locationLabel(item)}.`));
-    detail.append(make('h3', 'Belt & Road relationship'), make('p', item.belt_road_status));
     const sources = make('details'); sources.open = true;
     const uniqueSources = new Map();
     for (const source of item.sources) {
@@ -76,7 +76,7 @@
     }
     sources.append(list);
     const precision = make('details'); precision.append(make('summary', 'Location & collection details'));
-    precision.append(make('p', item.location.basis), make('p', `Collection: ${item.collection_method === 'crawler' ? 'crawler import' : 'manually checked source seed'}. ${item.reviewed_at ? 'Reviewed ' + item.reviewed_at.slice(0, 10) + '.' : 'Awaiting SOS Relay review.'} Publication status is separate from proof of the underlying claim.`));
+    precision.append(make('p', item.location.basis), make('p', `Source classification: ${item.source_classification}. SOS Relay links the source and does not independently certify its claims.`));
     const share = make('button', 'Copy report link'); share.type = 'button';
     share.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(location.href); share.textContent = 'Link copied'; }
@@ -102,7 +102,7 @@
       const button = make('button', item.title, 'case-link'); button.type = 'button';
       button.addEventListener('click', () => showCase(item, { focus: true }));
       li.append(make('p', `${item.country} · ${item.reported_on}`, 'case-meta'), button,
-        make('span', item.evidence_status, 'record-status'));
+        make('span', `Source: ${[...new Set(item.sources.map(source => source.publisher))].join(', ')}`, 'record-status'));
       list.append(li);
     }
     $('case-count').textContent = String(filtered.length);
@@ -119,12 +119,17 @@
     for (const item of filtered) {
       const marker = L.marker([item.location.latitude, item.location.longitude], {
         icon: L.divIcon({className: 'skull-marker', html: skull, iconSize: [22, 22], iconAnchor: [11, 11]}),
-        title: `${item.title}. ${item.evidence_status}. ${locationLabel(item)}`, keyboard: true
+        title: `${item.title}. ${item.source_classification} by source. ${locationLabel(item)}`, keyboard: true
       }).addTo(layers);
       const popup = make('div');
       const button = make('button', item.title); button.type = 'button';
       button.addEventListener('click', () => showCase(item, {focus: true}));
-      popup.append(button, make('p', item.evidence_status), make('small', locationLabel(item)));
+      const sourceLine = make('p', 'Source: ');
+      const source = item.sources[0];
+      const sourceLink = make('a', source.publisher + (item.source_classification === 'suspected' ? ' (suspected by source)' : ''));
+      sourceLink.href = source.url; sourceLink.target = '_blank'; sourceLink.rel = 'noopener noreferrer';
+      sourceLine.append(sourceLink);
+      popup.append(button, sourceLine, make('small', `Warning: ${warning}`));
       marker.bindPopup(popup, {maxWidth: 240, autoPanPadding: [15, 15]});
       marker.on('click', () => showCase(item, {pan: false}));
       markers.set(item.id, marker);
@@ -132,79 +137,45 @@
   }
   function filter() {
     const query = $('case-search').value.trim().toLocaleLowerCase();
-    filtered = cases.filter(item => `${item.title} ${item.country} ${item.location.label} ${item.evidence_status} ${item.sources.map(source => source.publisher).join(' ')}`.toLocaleLowerCase().includes(query));
+    filtered = cases.filter(item => `${item.title} ${item.country} ${item.location.label} ${item.source_classification} by source ${item.sources.map(source => source.publisher).join(' ')}`.toLocaleLowerCase().includes(query));
     if (selectedId && !filtered.some(item => item.id === selectedId)) {
       selectedId = null; $('case-detail').hidden = true; setUrl(null);
       if (selectedArea) { selectedArea.remove(); selectedArea = null; }
       if (map) map.closePopup();
     }
     renderList(); renderMap();
-    const notes = [...loadErrors];
-    if (hasMore) notes.push('Showing up to 500 records from each source collection.');
+    const notes = [];
+    if (hasMore) notes.push('Showing the first 500 records. Search applies to this loaded set.');
     if (!filtered.length) notes.push(query ? 'No matching locations.' : 'No locations loaded.');
     $('data-status').textContent = notes.join(' ');
-  }
-  function discoveryRecord(item) {
-    const suspected = item.classification === 'source_suspected';
-    const year = item.source_title.match(/\b(?:19|20)\d{2}\b/)?.[0] || 'Date unavailable';
-    const source = new URL(item.source_url); source.hash = `page=${item.pdf_page}`;
-    return {
-      id: `source-${item.id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-      title: `Site ${item.site_code}`, country: item.country, reported_on: year,
-      evidence_status: suspected ? 'Suspected by source · review pending' : 'Documented by source · review pending',
-      summary: `${item.publisher} lists this location in ${item.section} of ${item.source_title}.`,
-      communication: 'Public victim-message evidence has not been assessed for this source record.',
-      current_status: 'Historical source report. Current activity has not been assessed.',
-      belt_road_status: 'Not established', collection_method: 'crawler', reviewed_at: null,
-      location: {...item.location, precision: 'region', label: `${item.country} · ${item.site_code}`,
-        basis: 'Public report coordinates rounded to two decimal places. The 2 km display area is illustrative, not a confidence bound or an exact building location.'},
-      sources: [{url: source.href, publisher: item.publisher, title: item.source_title,
-        published_on: year, supports: `${suspected ? 'Suspected' : 'Documented'} by the publisher. ${item.section}, PDF page ${item.pdf_page}. Awaiting SOS Relay review.`}]
-    };
   }
   async function load() {
     if (loading) return; loading = true;
     $('data-status').textContent = 'Loading locations…'; $('retry-data').hidden = true;
     const previousId = selectedId || new URL(location.href).searchParams.get('case');
-    const endpoints = ['/api/belt-road/cases', '/api/belt-road/discoveries'];
-    const results = await Promise.allSettled(endpoints.map(async url => {
-      const response = await fetch(url, {cache: 'no-store', credentials: 'omit'});
-      if (!response.ok) throw new Error('Public records unavailable');
+    try {
+      const response = await fetch('/api/belt-road/locations', {cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000)});
+      if (!response.ok) throw new Error('Locations unavailable');
       const data = await response.json();
-      if (data.schema_version !== 1 || !Array.isArray(url.endsWith('/cases') ? data.cases : data.discoveries)) throw new Error('Unsupported records');
-      return data;
-    }));
-    const crawlResult = results[1];
-    if (crawlResult.status === 'fulfilled') {
-      const rows = crawlResult.value.discoveries;
-      const documented = rows.filter(item => item.classification === 'source_documented').length;
-      $('crawler-summary').textContent = `Crawler discoveries ${rows.length} · ${documented} documented by source · ${rows.length - documented} suspected · awaiting review${crawlResult.value.has_more ? ' · showing first 500' : ''}`;
-    } else {
-      $('crawler-summary').textContent = 'Crawler summary temporarily unavailable. Retry loading locations.';
-    }
-    cases = []; loadErrors = []; hasMore = false;
-    let latest = '';
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        loadErrors.push('Some locations could not be loaded. Retry to load the complete map.');
-        return;
-      }
-      const data = result.value;
-      cases.push(...(index === 0 ? data.cases : data.discoveries.map(discoveryRecord)));
-      hasMore ||= data.has_more === true;
-      if (data.generated_at > latest) latest = data.generated_at;
-    });
-    loadErrors = [...new Set(loadErrors)];
-    cases.sort((a, b) => a.country.localeCompare(b.country) || a.title.localeCompare(b.title, 'en', {numeric: true}));
-    $('updated-label').textContent = latest ? `Updated ${latest.slice(0, 10)}` : '';
-    $('retry-data').hidden = !loadErrors.length;
-    $('collection-note').textContent = 'OpenFreeMap supplies OpenStreetMap-based tiles and receives your network address and viewed map areas. English names are preferred, with Latin-script or local-name fallbacks. Source classifications and SOS Relay review status are shown per record.';
-    filter();
-    const selected = cases.find(item => item.id === previousId && filtered.some(row => row.id === item.id));
-    if (selected) showCase(selected);
-    else if (previousId && !loadErrors.length) $('data-status').textContent = 'This location is unavailable in the current collection.';
-    else if (cases.length && !selectedId) fitReports();
-    loading = false;
+      if (data.schema_version !== 1 || !Array.isArray(data.locations)) throw new Error('Unsupported records');
+      cases = data.locations;
+      cases.sort((a, b) => a.country.localeCompare(b.country) || a.title.localeCompare(b.title, 'en', {numeric: true}));
+      hasMore = data.has_more === true;
+      const documented = cases.filter(item => item.source_classification === 'documented').length;
+      const suspected = cases.filter(item => item.source_classification === 'suspected').length;
+      $('crawler-summary').textContent = `Source records ${cases.length} · ${documented} documented by source · ${suspected} suspected by source${hasMore ? ' · showing first 500' : ''}`;
+      $('updated-label').textContent = data.generated_at ? `Updated ${data.generated_at.slice(0, 10)}` : '';
+      $('collection-note').textContent = 'OpenFreeMap supplies OpenStreetMap-based tiles and receives your network address and viewed map areas. English names are preferred, with Latin-script or local-name fallbacks.';
+      filter();
+      const selected = cases.find(item => item.id === previousId && filtered.some(row => row.id === item.id));
+      if (selected) showCase(selected);
+      else if (previousId) $('data-status').textContent = 'This location is unavailable in the current collection.';
+      else if (cases.length && !selectedId) fitReports();
+    } catch {
+      $('data-status').textContent = 'Could not refresh locations. Retry when the connection is available.';
+      $('crawler-summary').textContent = 'Source records could not be refreshed.';
+      $('retry-data').hidden = false;
+    } finally { loading = false; }
   }
   $('case-search').addEventListener('input', filter);
   $('world-view').addEventListener('click', world);

@@ -1,7 +1,7 @@
 """Extract source-coded site candidates from supported public report tables.
 
-Private collection omits coordinates. An explicit operator projection can request
-rounded public report locations; no victim identities are extracted.
+Supported report extraction includes rounded locations and citations for direct
+map storage. No independent factual review or victim identities are produced.
 """
 from pathlib import Path
 import re
@@ -68,7 +68,7 @@ def extract_profiles(pdf_path, adapter):
     if len(response.stdout) > 4 * 1024 * 1024:
         raise ValueError('PDF text exceeds adapter limit')
     text = response.stdout.decode('utf-8', 'replace')
-    cases = parse_tables(text)
+    cases = parse_tables(text, include_locations=True)
     counts = {kind: sum(row['evidence_level'] == kind for row in cases)
               for kind in ('source_documented', 'source_suspected')}
     # These are published table totals, not a mechanism to manufacture rows.
@@ -82,8 +82,7 @@ def save_cases(db, document_id, cases):
     for item in cases:
         before = db.total_changes
         db.execute('''INSERT OR IGNORE INTO crawl_site_cases
-            (case_key,site_code,country,evidence_level,review_status,message_evidence)
-            VALUES(?,?,?,?,'needs_review','not_assessed')''',
+            (case_key,site_code,country,evidence_level) VALUES(?,?,?,?)''',
                    (item['case_key'], item['site_code'], item['country'], item['evidence_level']))
         added += db.total_changes - before
         db.execute('''INSERT OR IGNORE INTO crawl_site_evidence

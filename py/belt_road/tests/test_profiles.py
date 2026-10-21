@@ -58,11 +58,10 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(save_cases(db,1,rows),0)
             self.assertEqual(db.execute('SELECT count(*) FROM crawl_site_cases').fetchone()[0],4)
             self.assertEqual(db.execute('SELECT count(*) FROM crawl_site_evidence').fetchone()[0],4)
-            self.assertTrue(all(r[0]=='needs_review' for r in db.execute('SELECT review_status FROM crawl_site_cases')))
-            self.assertTrue(all(r[0]=='not_assessed' for r in db.execute('SELECT message_evidence FROM crawl_site_cases')))
+            self.assertNotIn('review_status', {r[1] for r in db.execute('PRAGMA table_info(crawl_site_cases)')})
             fetcher=FakeFetcher()
-            run(db,[SOURCE],fetcher,limit=10,target_cases=4)
-            self.assertEqual(fetcher.calls,[])
+            run(db,[SOURCE],fetcher,limit=1)
+            self.assertEqual(len(fetcher.calls),1)
         finally:
             db.close()
 
@@ -74,7 +73,7 @@ class ProfileTests(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp, patch('crawl.extract_profiles', side_effect=ValueError('Table totals do not match')):
                 counts=run(db,[{**SOURCE,'profile_adapter':'synthetic-test'}],PdfFetcher(),
-                           limit=1,target_cases=100,artifacts=Path(tmp))
+                           limit=1,artifacts=Path(tmp))
             self.assertEqual(counts['failed'],1)
             self.assertEqual(db.execute('SELECT count(*) FROM crawl_site_cases').fetchone()[0],0)
             self.assertEqual(db.execute('SELECT count(*) FROM crawl_documents').fetchone()[0],0)

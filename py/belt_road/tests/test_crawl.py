@@ -51,7 +51,7 @@ class CrawlTests(unittest.TestCase):
         self.assertNotIn('Navigation', doc['extracted_text'])
         lead = self.db.execute('SELECT * FROM crawl_candidates').fetchone()
         self.assertEqual(lead['evidence_kind'], 'research_lead')
-        self.assertEqual(lead['review_status'], 'needs_review')
+        self.assertNotIn('review_status', lead.keys())
         self.assertEqual(self.db.execute("SELECT count(*) FROM sqlite_master WHERE name='br_cases'").fetchone()[0], 0)
 
     def test_depth_zero_and_completed_seeds_not_refetched(self):

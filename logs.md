@@ -1,5 +1,26 @@
 # SOS Relay — project log
 
+## 2026-10-21
+
+**Simplified the Belt & Road warning-map pipeline.**
+
+- Combined crawler progress/documents and map results in one admin-owned SQLite
+  database at `/var/lib/sos-relay/belt-road/data.db`. Migration preserved all
+  127 map IDs/citations, 11 jobs and six documents; old DBs/configuration are
+  backed up under the new state directory.
+- The foreground crawler writes supported extracted locations directly to the
+  map table. Removed mandatory catalogue/review/publication steps and retired
+  the crawler systemd unit. Normal runs use Python as admin, with per-run job
+  and wall-clock limits, progress output and a single-run lock.
+- Replaced the two map API formats with read-only `/api/belt-road/locations`.
+  Popups now link the source and ask users to check the facts themselves.
+  Removed review promises; publisher classifications remain source-attributed.
+- Made README.md the sub-project introduction and command reference, retaining
+  the other Markdown files as short pointers. Retired legacy publication CLIs.
+- Validation: 25 Python tests, 18 Node tests (including direct crawler-to-API
+  integration), JavaScript syntax and MkDocs build passed. Runtime data and
+  databases remain server-owned and excluded from Git.
+
 ## 2026-10-20
 
 **Belt & Road crawler collected 122 distinct site candidates on Lightsail.**
