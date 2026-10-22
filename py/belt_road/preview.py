@@ -1,4 +1,5 @@
 """Isolated read-only /belt-road/ preview; never serves the private database."""
+import argparse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -43,6 +44,9 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--port', type=int, default=18189)
+    args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix='belt-road-preview-') as directory:
         target = Path(directory)
         shutil.copytree(ROOT / 'docs/belt-road', target / 'belt-road')
@@ -51,8 +55,8 @@ def main():
         shutil.copytree(ROOT / 'docs/assets/maplibre', target / 'assets/maplibre')
         for name in ['belt-road.css', 'belt-road.js', 'english-basemap.js']:
             shutil.copy2(ROOT / 'docs/assets' / name, target / 'assets' / name)
-        with ThreadingHTTPServer(('127.0.0.1', 18189), partial(Handler, directory=directory)) as server:
-            print('Belt & Road preview: http://127.0.0.1:18189/belt-road/', flush=True)
+        with ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, directory=directory)) as server:
+            print(f'Belt & Road preview: http://127.0.0.1:{args.port}/belt-road/', flush=True)
             try:
                 server.serve_forever()
             except KeyboardInterrupt:

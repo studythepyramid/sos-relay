@@ -31,3 +31,11 @@ test('Python crawler result appears through Node API without import or publicati
  const result=spawnSync('python3',['-c',script,dbFile],{cwd:fileURLToPath(new URL('../../py/belt_road',import.meta.url)),encoding:'utf8'});assert.equal(result.status,0,result.stderr);
  const data=await(await fetch(url)).json();assert.equal(data.locations.length,1);assert.equal(data.locations[0].id,'source-amnesty-kh-zz01');assert.equal(data.locations[0].sources[0].url,'https://example.org/report.pdf#page=159');assert.equal(data.locations[0].location.latitude,12.12);
 });
+
+test('unplaced reports remain public with their sources',async t=>{
+ const {writer,url}=await setup(t); const row={...fixture(),location:null};
+ writer.prepare('INSERT INTO map_locations VALUES(?,?,?,0)').run(row.id,JSON.stringify(row),'2026-01-01');
+ const response=await fetch(url); assert.equal(response.status,200);
+ const data=await response.json();assert.equal(data.locations[0].location,null);
+ assert.equal(data.locations[0].sources[0].url,row.sources[0].url);
+});

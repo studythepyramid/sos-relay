@@ -12,3 +12,5 @@ header{display:flex;align-items:center;gap:28px;background:var(--surface);paddin
 @media(max-width:850px){#case-list{max-height:55dvh}}
 
 .workspace{padding-top:16px}.collection-footer{margin-top:20px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}.collection-footer>p{margin:0}.collection-footer .page-heading{padding:12px 0}.collection-footer .about{margin-top:0}
+
+.question-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fffef9;border:2px solid #c5162e;color:#c5162e;box-shadow:0 1px 4px #0003;font:900 19px/1 system-ui}.legend-question{color:#c5162e;font-weight:900;font-size:21px;line-height:1}.legend{flex-wrap:wrap}

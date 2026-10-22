@@ -9,6 +9,7 @@
     return node;
   };
   const warning = 'Source-reported information. Please check the facts yourself; locations may be approximate.';
+  const uncertain = item => item.source_classification !== 'documented' || !item.location;
   const skull = '<svg aria-hidden="true" viewBox="0 0 24 24"><use href="../assets/icons/lucide.svg#skull"></use></svg>';
   let map, layers, cases = [], filtered = [], selectedId = null;
   let loading = false;
@@ -31,6 +32,7 @@
     return L.latLng(item.location.latitude, item.location.longitude).toBounds(item.location.radius_m * 2);
   }
   function locationLabel(item) {
+    if (!item.location) return 'Location not yet placed';
     return item.location.precision === 'region' ? 'Approximate area · not an exact building' : 'Reported site · see location source';
   }
   function setUrl(id) {
@@ -59,7 +61,7 @@
     detail.append(actions, title, make('p', warning), make('p', item.summary));
     if (item.communication) detail.append(make('p', item.communication));
     if (item.current_status) detail.append(make('p', item.current_status));
-    detail.append(make('h3', 'Location'), make('p', `${item.location.label}. ${locationLabel(item)}.`));
+    detail.append(make('h3', 'Location'), make('p', `${item.location?.label || item.title}. ${locationLabel(item)}.`));
     const sources = make('details'); sources.open = true;
     const uniqueSources = new Map();
     for (const source of item.sources) {
@@ -76,19 +78,19 @@
     }
     sources.append(list);
     const precision = make('details'); precision.append(make('summary', 'Location & collection details'));
-    precision.append(make('p', item.location.basis), make('p', `Source classification: ${item.source_classification}. SOS Relay links the source and does not independently certify its claims.`));
+    precision.append(make('p', item.location?.basis || 'Report retained; no map position has been assigned.'), make('p', `Source classification: ${item.source_classification}. SOS Relay links the source and does not independently certify its claims.`));
     const share = make('button', 'Copy report link'); share.type = 'button';
     share.addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(location.href); share.textContent = 'Link copied'; }
       catch { share.textContent = 'Copy the URL from your address bar'; }
     });
     detail.append(sources, precision, share); detail.hidden = false;
-    if (map) {
-      if (selectedArea) selectedArea.remove();
+    if (selectedArea) { selectedArea.remove(); selectedArea = null; }
+    if (map && item.location) {
       selectedArea = L.circle([item.location.latitude, item.location.longitude], {radius: item.location.radius_m,
         color: '#8a382d', weight: 1, dashArray: '4 5', fillOpacity: .06}).addTo(map);
     }
-    if (map && pan) {
+    if (map && pan && item.location) {
       // A regional report must not zoom to an apparent building location.
       map.fitBounds(locationBounds(item), { padding: [30, 30], maxZoom: item.location.precision === 'region' ? 9 : 15, animate: false });
       const marker = markers.get(item.id); if (marker) marker.openPopup();
@@ -102,12 +104,13 @@
       const button = make('button', item.title, 'case-link'); button.type = 'button';
       button.addEventListener('click', () => showCase(item, { focus: true }));
       li.append(make('p', `${item.country} · ${item.reported_on}`, 'case-meta'), button,
-        make('span', `Source: ${[...new Set(item.sources.map(source => source.publisher))].join(', ')}`, 'record-status'));
+        make('span', `${uncertain(item) ? '? Unverified · ' : ''}${!item.location ? 'Location not yet placed · ' : ''}Source: ${[...new Set(item.sources.map(source => source.publisher))].join(', ')}`, 'record-status'));
       list.append(li);
     }
     $('case-count').textContent = String(filtered.length);
   }
   function fitReports(items = filtered) {
+    items = items.filter(item => item.location);
     if (!map || !items.length) return;
     const bounds = L.latLngBounds([]);
     for (const item of items) bounds.extend(locationBounds(item));
@@ -117,9 +120,11 @@
     markers.clear(); if (!map) return;
     layers.clearLayers();
     for (const item of filtered) {
+      if (!item.location) continue;
+      const question = uncertain(item);
       const marker = L.marker([item.location.latitude, item.location.longitude], {
-        icon: L.divIcon({className: 'skull-marker', html: skull, iconSize: [22, 22], iconAnchor: [11, 11]}),
-        title: `${item.title}. ${item.source_classification} by source. ${locationLabel(item)}`, keyboard: true
+        icon: L.divIcon({className: question ? 'question-marker' : 'skull-marker', html: question ? '<span aria-hidden="true">?</span>' : skull, iconSize: [22, 22], iconAnchor: [11, 11]}),
+        title: `${question ? 'Unverified report: ' : ''}${item.title}. ${item.source_classification} by source. ${locationLabel(item)}`, keyboard: true
       }).addTo(layers);
       const popup = make('div');
       const button = make('button', item.title); button.type = 'button';
@@ -129,7 +134,7 @@
       const sourceLink = make('a', source.publisher + (item.source_classification === 'suspected' ? ' (suspected by source)' : ''));
       sourceLink.href = source.url; sourceLink.target = '_blank'; sourceLink.rel = 'noopener noreferrer';
       sourceLine.append(sourceLink);
-      popup.append(button, sourceLine, make('small', `Warning: ${warning}`));
+      popup.append(button, sourceLine, make('small', question ? 'Unverified report. Please check the linked sources.' : `Warning: ${warning}`));
       marker.bindPopup(popup, {maxWidth: 240, autoPanPadding: [15, 15]});
       marker.on('click', () => showCase(item, {pan: false}));
       markers.set(item.id, marker);
@@ -137,7 +142,7 @@
   }
   function filter() {
     const query = $('case-search').value.trim().toLocaleLowerCase();
-    filtered = cases.filter(item => `${item.title} ${item.country} ${item.location.label} ${item.source_classification} by source ${item.sources.map(source => source.publisher).join(' ')}`.toLocaleLowerCase().includes(query));
+    filtered = cases.filter(item => `${item.title} ${item.country} ${item.location?.label || 'location unknown'} ${item.source_classification} by source ${item.sources.map(source => source.publisher).join(' ')}`.toLocaleLowerCase().includes(query));
     if (selectedId && !filtered.some(item => item.id === selectedId)) {
       selectedId = null; $('case-detail').hidden = true; setUrl(null);
       if (selectedArea) { selectedArea.remove(); selectedArea = null; }
@@ -162,8 +167,9 @@
       cases.sort((a, b) => a.country.localeCompare(b.country) || a.title.localeCompare(b.title, 'en', {numeric: true}));
       hasMore = data.has_more === true;
       const documented = cases.filter(item => item.source_classification === 'documented').length;
-      const suspected = cases.filter(item => item.source_classification === 'suspected').length;
-      $('crawler-summary').textContent = `Source records ${cases.length} · ${documented} documented by source · ${suspected} suspected by source${hasMore ? ' · showing first 500' : ''}`;
+      const questions = cases.filter(uncertain).length;
+      const unplaced = cases.filter(item => !item.location).length;
+      $('crawler-summary').textContent = `Source records ${cases.length} · ${documented} documented by source · ${questions} unverified · ${unplaced} not yet placed${hasMore ? ' · showing first 500' : ''}`;
       $('updated-label').textContent = data.generated_at ? `Updated ${data.generated_at.slice(0, 10)}` : '';
       $('collection-note').textContent = 'OpenFreeMap supplies OpenStreetMap-based tiles and receives your network address and viewed map areas. English names are preferred, with Latin-script or local-name fallbacks.';
       filter();

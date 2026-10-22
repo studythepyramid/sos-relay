@@ -1,5 +1,65 @@
 # SOS Relay — project log
 
+## 2026-10-22
+
+**Added red question marks for uncertain reports.**
+
+- Reported/suspected source records use red question marks; source-documented
+  records retain skulls. Popups link sources and disclose uncertainty without a
+  review queue. Neither marker is an SOS Relay factual verdict.
+- Saved place mentions now become public reports automatically during extraction.
+  Existing named sites reuse geometry; sourced runtime place anchors support
+  approximate areas. Reports without positions remain visible with sources in
+  the same list. Added anchors for Myawaddy, Mong La and Shan State locally.
+- Python and Node allowlists accept explicit null geometry while still checking
+  source URLs and supplied coordinates. Added a configurable local preview port.
+- Validation: 33 Python tests and 19 Node tests passed; browser checks cover red
+  markers, source popups, unplaced reports and mobile display.
+
+
+**Uploaded local crawler results to Lightsail.**
+
+- Added `transfer.py` export/import commands and documented SSH transfer.
+  Tested duplicate imports and preservation of existing jobs in a temporary DB.
+- Backed up the VPS database and source registry, then merged three jobs,
+  three documents, seven quoted mentions and six map locations. Document IDs
+  were remapped and source configuration merged; no Git data commit or rebuild.
+- Production map count increased from 127 to 133. Backup:
+  `/var/lib/sos-relay/belt-road/backups/before-import-20261022T054411894028.db`.
+
+
+**Extracted local source-coordinate locations and tested Ollama assistance.**
+
+- Added `py/belt_road/extract.py` with a narrow Myanmar Witness/CIR caption
+  adapter. Six named source-coordinate locations now exist in the local map DB;
+  repeat extraction reports six unchanged records. Coordinates are rounded with
+  source-caption citations; transfer/rescue locations are not mapped.
+- Added optional local Ollama structured extraction with quoted evidence,
+  overlapping chunks, resumable per-model/version caching and raw output under
+  ignored `tmp/belt-road/extraction/`. Mentions stay in the same SQLite DB as
+  leads; model output never supplies map geometry.
+- Tested `qwen2.5:latest` against the saved IJM article. Tightened validation
+  after its first pass included a rescue destination. Final run saved two quoted
+  leads and rejected one unsupported-role quote. Exact quotation does not by
+  itself prove a place is a danger site; LLM leads are not automatic markers.
+- Validation: 32 Python tests passed; live local Ollama extraction succeeded.
+  No VPS upload or deployment performed. Commands documented in README.md.
+
+
+**Added local DDGS search → crawler pipeline.**
+
+- Adapted localllm's search wrapper into `py/search.py`, without Ollama.
+  Added DDGS to project dependencies and the lockfile.
+- Saves timestamped query/hit/error JSON and cumulative source configuration in
+  ignored `tmp/belt-road/`; queues deduplicated URLs in the existing local DB.
+  Supports direct URL seeds, sequential queries and optional bounded foreground
+  crawling. Keeps existing source adapters; no VPS data upload or deployment.
+- Documented commands and resume paths in `py/belt_road/README.md`. Search
+  examples use topics and locations, not rescuers' names.
+- Validation: 28 Python tests passed. Live topic-only search returned three
+  results; crawling fetched two documents/leads, with one robots DNS failure.
+  No locations were created: these article formats have no location adapter.
+
 ## 2026-10-21
 
 **Simplified the Belt & Road warning-map pipeline.**

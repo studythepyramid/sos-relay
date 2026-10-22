@@ -15,9 +15,9 @@ function sourceUrl(value) {
 }
 export function publicLocation(payload, updatedAt) {
   const row = JSON.parse(payload), location = row.location;
-  if (!location || !Number.isFinite(location.latitude) || Math.abs(location.latitude) > 90 ||
+  if ((location !== null && (!location || !Number.isFinite(location.latitude) || Math.abs(location.latitude) > 90 ||
       !Number.isFinite(location.longitude) || Math.abs(location.longitude) > 180 ||
-      !Number.isFinite(location.radius_m) || location.radius_m < 100 || location.radius_m > 500000 ||
+      !Number.isFinite(location.radius_m) || location.radius_m < 100 || location.radius_m > 500000)) ||
       !['reported','documented','suspected'].includes(row.source_classification) ||
       !Array.isArray(row.sources) || !row.sources.length || row.sources.length > 20 ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(string(row.id, 100))) throw new Error('Invalid source location');
@@ -26,7 +26,7 @@ export function publicLocation(payload, updatedAt) {
     summary: string(row.summary, 1500, true), reported_on: string(row.reported_on, 40, true),
     source_classification: row.source_classification,
     communication: string(row.communication, 500, true), current_status: string(row.current_status, 400, true),
-    location: {latitude: location.latitude, longitude: location.longitude, radius_m: location.radius_m,
+    location: location === null ? null : {latitude: location.latitude, longitude: location.longitude, radius_m: location.radius_m,
       precision: location.precision === 'site' ? 'site' : 'region',
       label: string(location.label, 200), basis: string(location.basis, 700, true)},
     sources: row.sources.map(source => ({url: sourceUrl(source.url),

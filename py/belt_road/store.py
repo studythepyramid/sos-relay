@@ -36,14 +36,15 @@ def clean_record(row):
     if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', rid):
         raise ValueError('Invalid location ID')
     loc = row['location']
-    latitude, longitude = loc['latitude'], loc['longitude']
-    if (type(latitude) not in (int, float) or type(longitude) not in (int, float)
-            or not math.isfinite(latitude) or not math.isfinite(longitude)
-            or abs(latitude) > 90 or abs(longitude) > 180):
-        raise ValueError('Invalid location coordinates')
-    radius = loc.get('radius_m', 2000)
-    if type(radius) not in (int, float) or not math.isfinite(radius) or not 100 <= radius <= 500000:
-        raise ValueError('Invalid display radius')
+    if loc is not None:
+        latitude, longitude = loc['latitude'], loc['longitude']
+        if (type(latitude) not in (int, float) or type(longitude) not in (int, float)
+                or not math.isfinite(latitude) or not math.isfinite(longitude)
+                or abs(latitude) > 90 or abs(longitude) > 180):
+            raise ValueError('Invalid location coordinates')
+        radius = loc.get('radius_m', 2000)
+        if type(radius) not in (int, float) or not math.isfinite(radius) or not 100 <= radius <= 500000:
+            raise ValueError('Invalid display radius')
     classification = row.get('source_classification', 'reported')
     if classification not in ('reported', 'documented', 'suspected'):
         raise ValueError('Invalid source classification')
@@ -65,7 +66,7 @@ def clean_record(row):
             'source_classification': classification,
             'communication': text(row.get('communication'), 500, True),
             'current_status': text(row.get('current_status'), 400, True),
-            'location': {'latitude': latitude, 'longitude': longitude, 'radius_m': radius,
+            'location': None if loc is None else {'latitude': latitude, 'longitude': longitude, 'radius_m': radius,
                          'precision': 'site' if loc.get('precision') == 'site' else 'region',
                          'label': text(loc.get('label', row['country']), 200),
                          'basis': text(loc.get('basis'), 700, True)},
