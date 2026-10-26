@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="{{LANG}}" dir="{{DIR}}" data-translation-status="{{STATUS}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}} — SOS Door</title>
+<link rel="stylesheet" href="{{PREFIX}}door.css">
+<script defer src="{{PREFIX}}door.js"></script>
+</head>
+<body>
+<header class="masthead">
+<a class="brand" href="{{PREFIX}}index.html">SOS / DOOR</a>
+<a class="home" href="/" lang="en">SOS Relay home</a>
+{{NAV}}
+</header>
+<main id="main">
+<p class="edition">{{NOTICE}}</p>
+<p class="downloads"><a href="{{PREFIX}}readme.md" lang="en">English source</a>
+<span aria-hidden="true"> · </span><a href="{{PREFIX}}{{FILE}}">Markdown ↓</a></p>
+<article>{{BODY}}</article>
+<footer>{{NAV}}<p><a href="/" lang="en">SOS Relay home</a> · SOS Door · {{DATE}}</p></footer>
+</main>
+<aside class="language-float" id="language-float" aria-label="Languages">
+<details><summary>文 / A <span aria-hidden="true">⌄</span></summary>
+{{NAV}}</details>
+<button id="close-languages" type="button" aria-label="{{CLOSE}}">×</button>
+</aside>
+</body>
+</html>

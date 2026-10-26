@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOS Relay · Notes</title>
+  <link rel="icon" href="/assets/site-icon.png">
+  <script defer src="/assets/vendor/marked/marked.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0e0c;
+      --fg: #cfe3d3;
+      --muted: #8fa593;
+      --line: #23302a;
+      --link: #7bd88f;
+      --code: #121712;
+    }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace; }
+    header { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: baseline; padding: 0.9rem max(1.25rem, calc((100vw - 52rem) / 2)); border-bottom: 1px solid var(--line); }
+    header .path { color: var(--muted); overflow-wrap: anywhere; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; overflow-wrap: anywhere; }
+    a { color: var(--link); }
+    pre { background: var(--code); padding: 1rem; overflow: auto; border: 1px solid var(--line); }
+    code { font-family: inherit; }
+    :not(pre) > code { background: var(--code); padding: 0.1em 0.3em; }
+    blockquote { margin: 0; padding: 0.2rem 1rem; border-left: 3px solid var(--line); color: var(--muted); }
+    table { border-collapse: collapse; } th, td { border: 1px solid var(--line); padding: 0.3rem 0.6rem; }
+    img { max-width: 100%; }
+    footer { max-width: 52rem; margin: 0 auto; padding: 0 1.25rem 3rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">SOS Relay home</a>
+    <a href="/tecNotes/">Technical Notes</a>
+    <span class="path" id="path"></span>
+    <a id="raw" href="">Plain text</a>
+  </header>
+  <main id="note"><p>Loading…</p></main>
+  <footer><a href="/">SOS Relay home</a></footer>
+  <script>
+    addEventListener('DOMContentLoaded', () => {
+      const note = document.getElementById('note');
+      const raw = location.pathname + '?raw=1';
+      document.getElementById('path').textContent = decodeURIComponent(location.pathname);
+      document.getElementById('raw').href = raw;
+      fetch(raw, { cache: 'no-cache' })
+        .then((response) => (response.ok ? response.text() : Promise.reject(response.status)))
+        .then((text) => {
+          note.innerHTML = marked.parse(text);
+          const heading = note.querySelector('h1');
+          if (heading) document.title = heading.textContent + ' · SOS Relay';
+        })
+        .catch((status) => {
+          note.textContent = status === 404 ? 'This note does not exist.' : 'The note could not be loaded.';
+        });
+    });
+  </script>
+</body>
+</html>
