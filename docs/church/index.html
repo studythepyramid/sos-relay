@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="../assets/site-icon.png"><title>Church Building · SOS Relay</title>
+<link rel="stylesheet" href="church.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+<script type="module" src="church.js"></script>
+</head>
+<body>
+<header><a href="/">SOS RELAY <span>/ EXPERIMENTS</span></a><span class="version">STUDY 01 · STONE CHAPEL</span></header>
+<main>
+<aside class="panel">
+<p class="eyebrow">A place for knowledge</p>
+<h1>The church<br> and the library.</h1>
+<p class="intro">Explore a small stone chapel, from its bell tower to the quiet reading spaces inside.</p>
+<h2>Choose a viewpoint</h2>
+<div class="views" role="group" aria-label="Camera viewpoints">
+<button data-view="overview" aria-pressed="true"><span>01</span> Exterior <b>↗</b></button>
+<button data-view="front" aria-pressed="false"><span>02</span> Entrance <b>→</b></button>
+<button data-view="inside" aria-pressed="false"><span>03</span> Central aisle <b>→</b></button>
+<button data-view="library" aria-pressed="false"><span>04</span> Reading alcove <b>→</b></button>
+<button data-view="plan" aria-pressed="false"><span>05</span> Open plan <b>↓</b></button>
+</div>
+<div class="options"><label><input type="checkbox" id="roof" checked> Show roof</label><label><input type="checkbox" id="cutaway"> Open front & side walls</label><label><input type="checkbox" id="rotate"> Slowly orbit</label></div>
+<p class="note" id="view-note">A first architectural study. Orbit around the chapel to explore the tower, windows, and grounds.</p>
+<details class="about"><summary>About this model</summary><p>An original model built from editable shapes. The shelves are placeholders for a future document library.</p><p>No outside model or texture downloads are needed to view it. <a href="sources.html">Project notes & model sources ↗</a></p></details>
+</aside>
+<section class="stage" aria-label="Interactive church model">
+<div id="viewport" tabindex="0" aria-label="3D church. Drag to orbit, right-drag to pan, scroll to zoom. Arrow keys pan the view."></div>
+<div class="stage-label"><span class="dot"></span><span id="view-label">EXTERIOR VIEW</span></div>
+<p id="status" role="status">Loading the chapel…</p>
+<div class="zoom" role="group" aria-label="Camera distance"><button id="near" aria-label="Move closer">+</button><button id="far" aria-label="Move farther">−</button><button id="reset" aria-label="Reset camera">↺</button></div>
+<div class="legend"><span>DRAG <b>orbit</b></span><span>RIGHT-DRAG <b>pan</b></span><span>SCROLL <b>distance</b></span><span>TOUCH <b>1 finger orbit · 2 fingers pan / pinch</b></span></div>
+</section>
+</main>
+<noscript>This interactive model needs JavaScript and WebGL. Project notes are available in sources.html.</noscript>
+</body></html>

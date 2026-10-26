@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="../assets/site-icon.png"><title>Church project notes</title><style>body{font:17px/1.7 system-ui;max-width:780px;margin:40px auto;padding:0 24px;color:#263e3a;background:#f9f8f3}h1,h2{line-height:1.3}a{color:#286653}code{overflow-wrap:anywhere}</style><a href="./">← Back to the church</a><h1>Church Building — study 01</h1>
+<p>An original, procedural stone chapel for SOS Relay. Open <code>index.html</code>
+through an HTTP server; ES modules do not work reliably from <code>file://</code>.</p>
+<h2>Use</h2>
+<ul>
+<li>Drag to orbit, right-drag to pan, scroll to change distance.</li>
+<li>Touch: one finger orbits; two fingers pan or pinch to zoom.</li>
+<li>Focus the model and use arrow keys to pan.</li>
+<li>Select Exterior, Entrance, Central aisle, Reading alcove, or Open plan.</li>
+<li>Toggle the roof, front/right walls, or slow orbit. Reset restores the
+  exterior camera. Reduced-motion preferences disable camera animation.</li>
+</ul>
+<p>This is an editable architectural prototype, not a surveyed building.
+The camera has no collision detection; it may pass through surfaces.
+The books are visual placeholders and do not yet open documents.</p>
+<h2>Project structure</h2>
+<ul>
+<li><code>church.js</code>: geometry, materials, named library bays, camera presets.</li>
+<li><code>church.css</code>: responsive controls and viewport layout.</li>
+<li><code>vendor/</code>: unmodified Three.js 0.180.0 modules and MIT license,
+  downloaded from the version-pinned package on unpkg.com.</li>
+<li>No remote assets, analytics, APIs, or model service is used at runtime.</li>
+</ul>
+<p>The project is copied by the existing MkDocs build as static files.
+The homepage link is in the root <code>za-index.md</code>. No Caddy change is needed
+for the planned <code>/church/</code> route under the existing static-site root.</p>
+<h2>Future document shelves</h2>
+<p>Each shelf group has a stable name and an empty <code>userData.documents</code>
+array. A next iteration can use a separate catalog with document id,
+title, language, URL, shelf id, and position. Raycasting can select a book
+and open a readable document panel. Also provide a normal HTML document
+list for keyboard users and devices without WebGL. Keep the document
+content outside the 3D geometry so updates do not require rebuilding it.</p>
+<h2>Where to get a more detailed model</h2>
+<p>References checked on 2026-10-26. No third-party model is included here.</p>
+<ul>
+<li><a href="https://sketchfab.com/3d-models/church-867a847b67364484bf44912e1af190af">Church by Tiago Lopes</a>
+  is presented as a downloadable church with interior and exterior.
+  Inspect its current download options and license before selecting it.</li>
+<li><a href="https://sketchfab.com/3d-models/church-34df848e1555415586af9ac90ecfbcdb">Church by Kornelija Vitkauskaite</a>
+  lists roughly 70,600 triangles and a Creative Commons Attribution
+  license. It is a candidate to inspect, not an asset already audited
+  or integrated into this project.</li>
+<li><a href="https://sketchfab.com/3d-models/st-peters-church-ugborough-interior-f1880eff7acc4dc7b48a8c6680406210">St Peter's Church Ugborough Interior</a>
+  by artfletch is a detailed photogrammetry example with about 2.5
+  million triangles and a Creative Commons Attribution license. Such a
+  scan would need optimization for this lightweight browser viewer.</li>
+<li><a href="https://polyhaven.com/">Poly Haven</a> provides models, textures, and
+  lighting assets under <a href="https://polyhaven.com/license">CC0</a>. It is a
+  useful source for stone, wood, furniture, and lighting; this does not
+  imply that a complete suitable church model is available there.</li>
+</ul>
+<p>For any imported model, check interior coverage, scale, polygon count,
+texture size, missing surfaces, and license requirements. Retain the
+creator's name, source link, license and modification notes when needed.
+Prefer an optimized GLB/glTF asset for the web. Three.js provides
+<a href="https://threejs.org/docs/pages/GLTFLoader">GLTFLoader</a> for a later import
+path; it is not included in this prototype.</p>
+<h2>Model or pictures?</h2>
+<p>For a flexible document library, start with editable geometry, as this
+prototype does. Pictures can guide the style, proportions, windows and
+materials. One photograph does not describe the unseen walls or interior.</p>
+<p>For a particular real church, use multiple overlapping photographs and
+measurements, or an existing scan. Photogrammetry is a separate capture,
+reconstruction and cleanup task; the Ugborough model's source page
+illustrates the amount of photography involved. An exterior-only scan
+will not supply a usable interior. A photo-to-3D service may produce a
+visual approximation, but its interior and geometry still need checking.</p></html>
