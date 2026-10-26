@@ -4,16 +4,32 @@
 - [Technical Notes](/tecNotes/)
     Linux commands, Ubuntu server admin. AI and Agents.
 
+
+- [Doors](/tecNotes/door/)
+    Setup notes for agents: open a door for a user. English, plus Russian, Persian, and Chinese.
+
 - [Argument](/argument/)
     A platform for good traditions of argument between intelligent users,
     anonymous user could leave comments there.
- 
-- [test Message Channel](/publicMsg/)
-    A page to let user test with text messages
-    anonymous user could leave public text there.
+
+- Projects
+    Construction list. One line per job.
+
+    - [linput](/tecNotes/projects/hand.abstract.md): fingers as keys. Work sits in `~/dev/linput/hand`.
+      ![Hand mesh, colored by region](assets/handmesh-small.png)
+
+    - vim / nvim plugins: editor tools. No public page yet.
+      ![Vim editor](assets/vim-icon.png)
+
+    - English learning: speaking practice. The numbered voice samples above are the public part.
 
 - [Leave a message](/publicMsg/)
     Text messages for review, with no account required.
+
+- SOS map (preview): map/index.html
+
+- [Church Building](/church/)
+    Explore a stone chapel in 3D: orbit, pan, zoom, and look inside.
 
 
 - [History Notes](/history_notes/)
@@ -26,20 +42,23 @@
     nowadays.
     
 
+- [Shared files](/share/)
+    Public downloads. The folder lives on the VPS outside the MkDocs build, so a site rebuild does not delete it.
+
+
 ```
 nav:
-  # index.md or index.html should be script generated
-  # list the contents of folder, group sub-folder together
-  - Home: index.md
-  - SOS map (preview): map/index.html
 
-  # Categories is more important for me
-  #
   # about.md should be left along for user editing
-  - About: about.md
-
   - Doors to the real Internet: doors.2026-09.md
 
+  - ~/dev/media-scripts/voice/server.py is a Flask backend. 
+    It listens on 127.0.0.1:5057 and serves the page in static/.
+
+     The three buttons are Play/Pause, Rec/Rec-Stop and Rec-Play. 
+     Recording uses pw-record plus the same ffmpeg filter chain as vrecord.sh, and playback uses mpv.
+
+  - on vps to do the english speak lessons, failed.
   - Voice samples:
       - English: samples/tts-stt-en.md
       - Chinese: samples/tts-stt-cn.md

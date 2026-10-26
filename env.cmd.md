@@ -202,6 +202,7 @@ push-to-deploy so its forced checkout preserves the new implementation.
 
 - Main site: `https://sosweb.org/`, served from `/opt/sos-relay/site/`.
 - Technical notes: `https://sosweb.org/tecNotes/`, served directly from `/my/md/` on the VPS, with directory browsing. Markdown is served as files, not rendered by MkDocs. The public URL does not expose the filesystem prefix.
+- Shared files: `https://sosweb.org/share/`, served by Caddy from `/var/sos-share/` with directory browsing. Read-only for visitors. Copy files in over SSH or rsync; no Node service and no MkDocs rebuild. The directory is outside `/opt/sos-relay/site/`, so `mkdocs build` does not delete it.
 - Old `/mymd/` and `/my/md/` links redirect to `/tecNotes/`, preserving the remaining path. Filesystem paths and rsync destinations remain `/my/md/`.
 - `/my` is a symlink to `/home/admin/my` on the VPS.
 - **Never publish `/my/` or `/my/*.md`.** Only `/my/md/` is authorized for public access. Caddy explicitly returns 404 for other `/my/` paths.

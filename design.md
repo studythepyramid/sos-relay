@@ -171,6 +171,7 @@ sos-relay/
 /opt/sos-relay.git/        # bare repo — deploy target, post-receive hook lives here
 /opt/sos-relay/            # working tree, checked out by the hook
 /opt/sos-relay/site/       # mkdocs build output — what Caddy actually serves
+/var/sos-share/            # public downloads at /share/ — not inside site/, so builds do not delete it
 /my/  →  /home/admin/my/   # private parent; only md/ is published
 ```
 
