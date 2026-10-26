@@ -12,14 +12,8 @@
     A platform for good traditions of argument between intelligent users,
     anonymous user could leave comments there.
 
-- Projects
+- [Projects](/projects.html)
     Construction list. One line per job.
-
-    - ![Hand mesh, colored by region](assets/handmesh-small.png) [linput](/tecNotes/projects/hand.abstract.md): fingers as keys. Work sits in `~/dev/linput/hand`.
-
-    - ![Vim editor](assets/vim-icon.png) vim / nvim plugins: editor tools. No public page yet.
-
-    - English learning: speaking practice. The numbered voice samples above are the public part.
 
 - [Leave a message](/publicMsg/)
     Text messages for review, with no account required.

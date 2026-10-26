@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOS Relay · Projects</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0e0c;
+      --fg: #cfe3d3;
+      --muted: #8fa593;
+      --line: #23302a;
+      --link: #7bd88f;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.45 ui-monospace, "Cascadia Code", "DejaVu Sans Mono", monospace;
+    }
+    main { max-width: 40rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    a { color: var(--link); }
+    header a { text-decoration: none; }
+    h1 { font-size: 1.4rem; font-weight: 600; margin: 1.5rem 0 0.25rem; }
+    .lead { color: var(--muted); margin-top: 0; }
+    ul { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+    li {
+      display: flex;
+      gap: 0.9rem;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-top: 1px solid var(--line);
+    }
+    img, .mark {
+      width: 64px;
+      height: 64px;
+      flex: 0 0 64px;
+      object-fit: cover;
+      background: #121712;
+    }
+    .mark {
+      display: grid;
+      place-items: center;
+      color: var(--link);
+      border: 1px solid var(--line);
+    }
+    h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+    p { margin: 0.2rem 0 0; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <header><a href="/">SOS Relay</a></header>
+    <h1>Projects</h1>
+    <p class="lead">Construction list. One line per job.</p>
+    <ul>
+      <li>
+        <img src="assets/handmesh-small.png" alt="" width="64" height="64">
+        <div>
+          <h2><a href="/tecNotes/projects/hand.abstract.md">linput</a></h2>
+          <p>Fingers as keys. Work sits in ~/dev/linput/hand.</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/vim-icon.png" alt="" width="64" height="64">
+        <div>
+          <h2>vim / nvim plugins</h2>
+          <p>Editor tools. No public page yet.</p>
+        </div>
+      </li>
+      <li>
+        <span class="mark" aria-hidden="true">En</span>
+        <div>
+          <h2>English learning</h2>
+          <p>Speaking practice. The numbered voice samples are the public part.</p>
+        </div>
+      </li>
+    </ul>
+  </main>
+</body>
+</html>
