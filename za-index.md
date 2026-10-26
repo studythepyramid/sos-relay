@@ -15,11 +15,9 @@
 - Projects
     Construction list. One line per job.
 
-    - [linput](/tecNotes/projects/hand.abstract.md): fingers as keys. Work sits in `~/dev/linput/hand`.
-      ![Hand mesh, colored by region](assets/handmesh-small.png)
+    - ![Hand mesh, colored by region](assets/handmesh-small.png) [linput](/tecNotes/projects/hand.abstract.md): fingers as keys. Work sits in `~/dev/linput/hand`.
 
-    - vim / nvim plugins: editor tools. No public page yet.
-      ![Vim editor](assets/vim-icon.png)
+    - ![Vim editor](assets/vim-icon.png) vim / nvim plugins: editor tools. No public page yet.
 
     - English learning: speaking practice. The numbered voice samples above are the public part.
 
