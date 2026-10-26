@@ -201,7 +201,8 @@ push-to-deploy so its forced checkout preserves the new implementation.
 ## Published paths
 
 - Main site: `https://sosweb.org/`, served from `/opt/sos-relay/site/`.
-- Technical notes: `https://sosweb.org/tecNotes/`, served directly from `/my/md/` on the VPS, with directory browsing. Markdown is served as files, not rendered by MkDocs. The public URL does not expose the filesystem prefix.
+- Technical notes: `https://sosweb.org/tecNotes/`, served directly from `/my/md/` on the VPS, with directory browsing. Markdown is not rendered by MkDocs. A browser opening a `.md` note gets `/md-view.html`, which renders it with a link back home; add `?raw=1` for the plain file. Scripts and agents that do not ask for HTML still get the plain file. The public URL does not expose the filesystem prefix.
+- Door narration: `https://sosweb.org/share/door-tts/`, from `/var/sos-share/door-tts/`. Render locally with `.venv/bin/python py/door/speak.py`, then `scp -r tmp/door-tts/* lightsail.a:/var/sos-share/door-tts/`. Re-render after editing the opening of `/my/md/door/readme.md`; the page reports stale audio instead of highlighting the wrong text.
 - Shared files: `https://sosweb.org/share/`, served by Caddy from `/var/sos-share/` with directory browsing. Read-only for visitors. Copy files in over SSH or rsync; no Node service and no MkDocs rebuild. The directory is outside `/opt/sos-relay/site/`, so `mkdocs build` does not delete it.
 - Old `/mymd/` and `/my/md/` links redirect to `/tecNotes/`, preserving the remaining path. Filesystem paths and rsync destinations remain `/my/md/`.
 - `/my` is a symlink to `/home/admin/my` on the VPS.

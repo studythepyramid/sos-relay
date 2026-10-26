@@ -89,9 +89,10 @@
     }
 
     audio.addEventListener('timeupdate', () => {
-      const t = audio.currentTime;
-      const i = segments.findIndex((segment) => t >= segment.start && t < segment.end + 0.4);
       clearCurrent();
+      const t = audio.currentTime;
+      if (audio.paused && t === 0) return;
+      const i = segments.findIndex((segment) => t >= segment.start && t < segment.end + 0.4);
       if (i !== -1) blocks[i].classList.add('tts-current');
     });
     audio.addEventListener('play', () => { play.textContent = 'Pause'; });

@@ -92,6 +92,7 @@ Site hostname: `sosweb.org`. Response compression: gzip.
   browsing. Existing HTML index files render as webpages; Markdown
   remains available as files.
 - Notes hide dotfiles, `*.swp`, `*.swo`, and `*~`.
+- Browser requests for `/tecNotes/*.md` (any depth, `Accept: text/html`, no `raw=1` query) are rewritten to `/md-view.html` from the MkDocs site. That page shows a home link and renders the note it fetches with `?raw=1`. Other clients and `?raw=1` links get the plain file.
 - `/share/*`: strip the prefix and serve `/var/sos-share`, with directory browsing. Read-only. Hidden files and editor backups are hidden, same as notes. This directory is outside the MkDocs output.
 - `/share` redirects to `/share/` with 302.
 - `/tecNotes` redirects to `/tecNotes/` with 302.

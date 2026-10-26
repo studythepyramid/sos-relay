@@ -17,6 +17,32 @@
 
 Cursor edited on 2026 1026
 
+**First TTS test: the Door readme reads its opening aloud.**
+
+- `py/door/speak.py` renders the first five blocks of `/my/md/door/readme.md`
+  (title, date line, first heading, two paragraphs) with two local Piper
+  voices: US Lessac and UK Northern male. Each block's start and end come
+  from the synthesized samples, so no aligner is needed. Output is an mp3
+  plus a JSON of timemarks per voice, uploaded to `/var/sos-share/door-tts/`.
+- The English Door page (`/tecNotes/door/`) shows a voice menu and a Listen
+  button. The block being read is highlighted; clicking a narrated block
+  jumps to it. If the readme opening changes, the page says the audio is out
+  of date instead of highlighting the wrong text. No speech engine runs on
+  the VPS or in the browser. za heard it play.
+- Door pages in all four languages link back to the SOS Relay home page.
+- Raw notes: a browser opening any `/tecNotes/*.md` now gets `md-view.html`,
+  which renders the note under a home link. `?raw=1`, curl, and agents still
+  get the plain file. Caddyfile backups:
+  `/etc/caddy/Caddyfile.before-md-view-20261026T100713Z` and
+  `...before-md-view-regexp-...`.
+- Also uploaded the current `/my/md/door/`; the VPS copy of `readme.zh.md`
+  was the older Chinese-only edition. VPS backup:
+  `~/sos-relay-backups/door-20261026T100459Z.tgz`.
+- Not yet on the VPS: `/my/md/projects/hand.abstract.md`, which the
+  homepage and projects page link to (404 there).
+
+Cursor edited on 2026 1026
+
 ## 2026-10-22
 
 **Refreshed the local English map preview.**
