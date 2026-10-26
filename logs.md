@@ -1,6 +1,31 @@
 # SOS Relay — project log
 
+## 2026-10-26
+
+**Published a read-only download folder and a projects page.**
+
+- `/share/` is served by Caddy from `/var/sos-share/`. The directory sits
+  outside the MkDocs output, so a site rebuild does not delete it. Visitors
+  can list and download files. Uploads are by SSH or scp. The Node service
+  is not on this path.
+- The homepage, which MkDocs builds from `za-index.md`, links to Shared
+  files and to Projects.
+- `docs/projects.html` lists linput, vim, and English learning. The hand
+  and Vim pictures are both 128×128 and shown at 64×64, so the icons match.
+- `docs/` holds site pages. `docs/mymd` points at `/my/md/`, the technical
+  notes that sync to the site. The rest of `/my/` stays off the web.
+
+Cursor edited on 2026 1026
+
 ## 2026-10-22
+
+**Refreshed the local English map preview.**
+
+- Found the long-running port 18189 preview serving an old snapshot without
+  `english-basemap.js` (404). Restarted that preview with current assets.
+- Preview now serves allowed map assets directly with no-store headers, rather
+  than copying a startup snapshot. Private DB/source files remain inaccessible.
+
 
 **Added red question marks for uncertain reports.**
 
@@ -153,6 +178,17 @@
   directly below the site header; all 127 source records remain available.
 - Checked desktop/mobile layout and retained record/skull counts in the browser.
   JavaScript syntax and MkDocs build passed. No runtime database was changed.
+
+## 2026-10-16
+
+Edited by za and Codex.
+
+- Updated the static-site layout: centered desktop containers use 80% of
+  the available width, reserving at least 10% per side, with a 1280px cap.
+- Below the desktop breakpoint, reading content flows in one vertical
+  column with at least 3px gutters per side; navigation remains collapsible.
+- Published the stylesheet and rebuilt MkDocs successfully. The live
+  stylesheet was checked; browser visual review remains with za.
 
 ## 2026-10-15
 
