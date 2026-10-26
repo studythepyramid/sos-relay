@@ -4,7 +4,7 @@ This sub-project tests a simple warning map for SOS Relay: gather public reporti
 about coercion and trafficking, show source-reported locations as small skulls,
 and let people open the sources. SOS Relay offers information and channels for
 SOS communication; it does not act as a fact-checking or certifying authority.
-The `/belt-road/` name is provisional and does not establish that a mapped site
+The public page is `/dangerous-map/`. Its name does not establish that a mapped site
 belongs to a Belt and Road project.
 
 ## Local web search and crawling
@@ -54,7 +54,7 @@ python3 py/belt_road/crawl.py list --limit 100
 python3 py/belt_road/preview.py
 ```
 
-Preview: <http://127.0.0.1:18189/belt-road/>. The crawl wall-clock limit applies
+Preview: <http://127.0.0.1:18189/dangerous-map/>. The crawl wall-clock limit applies
 only to the fetching stage, after searches finish. Ctrl+C retains saved batches
 and queued jobs. Keep `sources.json` while work remains queued; it holds the
 configuration needed to resume. `--sources`, `--out-dir` and `--db` can override

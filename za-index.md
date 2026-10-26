@@ -12,13 +12,13 @@
     A platform for good traditions of argument between intelligent users,
     anonymous user could leave comments there.
 
-- [Projects](/projects.html)
-    Construction list. One line per job.
+- [Project Listing](/projects.html)
+    Construction list. linput/hand/, knowledge base, Vim plugins, etc.
 
 - [Leave a message](/publicMsg/)
     Text messages for review, with no account required.
 
-- SOS map (preview): map/index.html
+- [Dangerous Map](/dangerous-map/)
 
 - [Church Building](/church/)
     Explore a stone chapel in 3D: orbit, pan, zoom, and look inside.

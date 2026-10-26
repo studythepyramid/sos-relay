@@ -1,0 +1,4 @@
+# Insert inside the existing sosweb.org site block after deploying the page.
+# Keep the legacy API and database paths unchanged.
+@legacy_dangerous_map path /belt-road /belt-road/ /belt-road/index.html
+redir @legacy_dangerous_map /dangerous-map/?{query} 308

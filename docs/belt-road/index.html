@@ -2,42 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Belt &amp; Road · Reported harm map</title>
-  <link rel="stylesheet" href="../assets/leaflet/leaflet.css">
-  <link rel="stylesheet" href="../assets/maplibre/maplibre-gl.css">
-  <link rel="stylesheet" href="../assets/belt-road.css?v=6">
-  <script defer src="../assets/leaflet/leaflet.js"></script>
-  <script defer src="../assets/maplibre/maplibre-gl.js"></script>
-  <script defer src="../assets/maplibre/leaflet-maplibre-gl.js"></script>
-  <script defer src="../assets/english-basemap.js"></script>
-  <script defer src="../assets/belt-road.js?v=6"></script>
+  <title>Dangerous Map has moved</title>
+  <link rel="canonical" href="https://sosweb.org/dangerous-map/">
+  <script>location.replace('/dangerous-map/' + location.search + location.hash);</script>
 </head>
-<body>
-  <header><a class="brand" href="https://sosweb.org/">✳ <span>SOS RELAY</span></a><h1>Belt &amp; Road</h1><a href="../map/"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#map-pin"></use></svg> SOS map <svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#external-link"></use></svg></a></header>
-  <main>
-    <div class="workspace">
-      <section class="map-panel" aria-label="Global map of reported harm">
-        <div class="map-toolbar"><span class="legend"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#skull"></use></svg> Source documented <span class="legend-question" aria-hidden="true">?</span> Unverified</span><button id="world-view" type="button"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#globe"></use></svg>World view</button></div>
-        <div id="belt-map" aria-label="Select a skull or red question-mark marker to read its public sources and evidence status."></div>
-        <div class="map-footer"><p id="tile-status" role="status">Loading map…</p><span>Zoom in to separate overlapping records</span></div>
-      </section>
-      <aside class="sidebar" aria-label="Reports and evidence">
-        <div class="search-row"><label for="case-search" class="sr-only">Search locations, sources or evidence status</label><input id="case-search" type="search" placeholder="Search place, site or source" autocomplete="off"><button id="fit-reports" type="button"><svg class="icon" aria-hidden="true"><use href="../assets/icons/lucide.svg#map-pin"></use></svg>Show all</button></div>
-        <div class="list-heading"><h2>Locations <span id="case-count">0</span></h2><span id="updated-label"></span></div>
-        <p id="data-status" role="status">Loading locations…</p><button id="retry-data" type="button" hidden>Retry loading locations</button>
-        <ul id="case-list"></ul>
-        <article id="case-detail" hidden tabindex="-1" aria-labelledby="case-title"></article>
-
-      </aside>
-    </div>
-    <footer class="collection-footer">
-      <p id="crawler-summary" role="status">Loading source summary…</p>
-    <div class="page-heading"><div><p class="eyebrow">PUBLIC SOURCES</p><p class="intro">Reported coercion and trafficking. Select a location for evidence.</p></div><span class="collection-label">English map labels · approximate locations</span></div>
-      <details class="about"><summary>About this map</summary><p>A skull means the source classifies the report as documented. A red “?” means an unverified or suspected report. Neither symbol is an SOS Relay verdict. Reports without a map position remain in the list. A marker does not confirm deaths, current activity or guilt of people at a site. Multiple records can describe the same place.</p><p>SOS Relay provides information and channels for SOS communication. It links public sources and does not act as a certifying authority. Please check the source information yourself. An unmarked area does not establish safety.</p><p>Belt and Road relationships require separate evidence. Neither geography nor nationality establishes a connection.</p><p>No private victim identities or original leaked communications are hosted here.</p><p id="collection-note"></p></details>
-    </footer>
-  </main>
-  <noscript>JavaScript is required for the map. <a href="/api/belt-road/locations">Read source locations as JSON</a>.</noscript>
-</body>
+<body><p>This map has moved to <a href="/dangerous-map/">Dangerous Map</a>.</p></body>
 </html>

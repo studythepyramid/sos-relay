@@ -20,7 +20,7 @@ from urllib import error, parse, request, robotparser
 
 VERSION = '3'
 ROOT = Path(__file__).resolve().parents[2]
-USER_AGENT = 'SOSRelayResearch/0.1 (+https://sosweb.org/belt-road/)'
+USER_AGENT = 'SOSRelayResearch/0.1 (+https://sosweb.org/dangerous-map/)'
 MAX_BYTES = 4 * 1024 * 1024
 MAX_TEXT = 250000
 TERMS = ('scam', 'traffick', 'forced labour', 'forced labor', 'coerced', 'plea', 'survivor')

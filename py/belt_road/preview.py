@@ -1,4 +1,4 @@
-"""Isolated read-only /belt-road/ preview; never serves the private database."""
+"""Isolated read-only /dangerous-map/ preview; never serves the private database."""
 import argparse
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -50,13 +50,14 @@ def main():
     with tempfile.TemporaryDirectory(prefix='belt-road-preview-') as directory:
         target = Path(directory)
         shutil.copytree(ROOT / 'docs/belt-road', target / 'belt-road')
+        shutil.copytree(ROOT / 'docs/dangerous-map', target / 'dangerous-map')
         shutil.copytree(ROOT / 'docs/assets/leaflet', target / 'assets/leaflet')
         shutil.copytree(ROOT / 'docs/assets/icons', target / 'assets/icons')
         shutil.copytree(ROOT / 'docs/assets/maplibre', target / 'assets/maplibre')
         for name in ['belt-road.css', 'belt-road.js', 'english-basemap.js']:
             shutil.copy2(ROOT / 'docs/assets' / name, target / 'assets' / name)
         with ThreadingHTTPServer(('127.0.0.1', args.port), partial(Handler, directory=directory)) as server:
-            print(f'Belt & Road preview: http://127.0.0.1:{args.port}/belt-road/', flush=True)
+            print(f'Dangerous Map preview: http://127.0.0.1:{args.port}/dangerous-map/', flush=True)
             try:
                 server.serve_forever()
             except KeyboardInterrupt:
