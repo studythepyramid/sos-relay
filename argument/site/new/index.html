@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
 <style>
   body{margin:0;font-family:'JetBrains Mono',monospace;background:#0b0e0c;color:#cfe3d3}
+  .breadcrumbs{font-size:15px;letter-spacing:.04em;overflow-wrap:anywhere}
+  .breadcrumbs a{color:#7f9186}
+  .breadcrumbs a:hover,.breadcrumbs a:focus-visible{color:#7bd88f}
   ::selection{background:#2c4a37;color:#eafaf0}
 </style>
 </head>
@@ -15,7 +18,7 @@
 <div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
 
   <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a">
-    <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument/new</div>
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">sosweb.org</a>/<a href="/argument/">argument</a>/<a href="/argument/new" aria-current="page">new</a></nav>
   </div>
 
   <div style="flex:1 1 auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px">

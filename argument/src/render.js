@@ -32,6 +32,13 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function breadcrumbs(slug) {
+  const current = slug == null ? ' aria-current="page"' : '';
+  const leaf = slug == null ? ''
+    : `/<a href="/argument/${escapeHtml(encodeURIComponent(slug))}" aria-current="page">${escapeHtml(slug)}</a>`;
+  return `<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">sosweb.org</a>/<a href="/argument/"${current}>argument</a>${leaf}</nav>`;
+}
+
 function writeAtomic(filePath, content) {
   mkdirSync(path.dirname(filePath), { recursive: true });
   const tmp = `${filePath}.tmp-${process.pid}-${Date.now()}`;
@@ -65,6 +72,9 @@ ${FONT_LINK}
   body{margin:0;font-family:'JetBrains Mono',monospace;background:#0b0e0c;color:#cfe3d3}
   ::selection{background:#2c4a37;color:#eafaf0}
   a{color:#7bd88f}
+  .breadcrumbs{font-size:15px;letter-spacing:.04em;overflow-wrap:anywhere}
+  .breadcrumbs a{color:#7f9186}
+  .breadcrumbs a:hover,.breadcrumbs a:focus-visible{color:#7bd88f}
   .reply-btn{background:none;border:none;padding:0;font-family:inherit;cursor:pointer;color:#5f8a6e;font-size:13px}
   .reply-btn:hover{color:#7bd88f;text-decoration:underline}
 </style>
@@ -109,8 +119,8 @@ export function renderThread(argumentRow) {
 <div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
 
   <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-    <div>
-      <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument/${escapeHtml(argumentRow.slug)}</div>
+    <div style="min-width:0">
+      ${breadcrumbs(argumentRow.slug)}
       <div style="margin-top:6px;font-size:20px;font-weight:700;color:#eafaf0;line-height:1.4">${rootTitle}</div>
     </div>
     ${PROFILE_LINK}
@@ -204,8 +214,8 @@ export function renderList(rows) {
   const body = `<div style="max-width:640px;margin:0 auto;min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column">
 
   <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a;display:flex;align-items:baseline;justify-content:space-between">
-    <div>
-      <div style="font-size:15px;color:#5f7268;letter-spacing:.04em">~/argument</div>
+    <div style="min-width:0">
+      ${breadcrumbs()}
       <div style="margin-top:4px;font-size:13px;color:#4a6155">${rows.length} thread${rows.length === 1 ? '' : 's'}</div>
     </div>
     <div style="display:flex;gap:14px;align-items:baseline">

@@ -18,7 +18,7 @@
 - [Leave a message](/publicMsg/)
     Text messages for review, with no account required.
 
-- [Dangerous Map](/dangerous-map/)
+- [Dangerous Map](/dangerous-map/), A map marking the dangerous locations.
 
 - [Church Building](/church/)
     Explore a stone chapel in 3D: orbit, pan, zoom, and look inside.
