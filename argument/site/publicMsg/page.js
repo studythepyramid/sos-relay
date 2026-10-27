@@ -28,19 +28,25 @@ async function refresh() {
   $('ip').textContent = result.ip || 'Unavailable';
   $('reference').textContent = result.reference;
   $('account').textContent = result.registered ? result.username : 'Anonymous';
+  renderHistory();
+  update();
+}
+function renderHistory() {
+  const direction = $('history-order').value === 'newest' ? -1 : 1;
+  const messages = [...(state?.messages || [])].sort((a, b) => direction * ((a.createdAt - b.createdAt) || a.id.localeCompare(b.id)));
   $('history').replaceChildren();
-  if (!result.messages.length) $('history').textContent = 'No messages yet.';
-  for (const message of result.messages) {
+  if (!messages.length) $('history').textContent = 'No messages yet.';
+  for (const message of messages) {
     const article = document.createElement('article');
     const label = document.createElement('small');
-    label.textContent = `${message.status} · ${new Date(message.createdAt).toLocaleString()} · reference ${message.id}`;
+    label.textContent = `${message.reviewNote || message.status} · ${new Date(message.createdAt).toLocaleString()} · reference ${message.id}`;
     const body = document.createElement('p');
     body.textContent = message.body;
     article.append(label, body);
     $('history').append(article);
   }
-  update();
 }
+$('history-order').addEventListener('change', renderHistory);
 $('body').addEventListener('input', update);
 $('refresh').addEventListener('click', () => refresh().catch(error => { $('feedback').textContent = error.message; }));
 $('message-form').addEventListener('submit', async event => {
@@ -62,7 +68,7 @@ $('message-form').addEventListener('submit', async event => {
     }
     $('body').value = '';
     pending = null;
-    $('feedback').textContent = `Received for review. Reference: ${result.id}. Your message is not public; assistance has not been dispatched.`;
+    $('feedback').textContent = `${result.reviewNote ? 'Received — ' + result.reviewNote + '.' : 'Received for review.'} Reference: ${result.id}. Your message is not public; assistance has not been dispatched.`;
     await refresh();
   } catch (error) { $('feedback').textContent = error.message; }
   finally { busy = false; update(); }

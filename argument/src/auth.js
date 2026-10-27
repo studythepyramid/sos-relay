@@ -11,21 +11,29 @@ export const cookieOptions = req => ({
   httpOnly: true, secure: req.secure, sameSite: 'lax', path: '/',
 });
 
-export async function register(dbFile, username, password) {
+export function validateUsername(username) {
   if (typeof username !== 'string' || !/^[a-zA-Z0-9_]{3,32}$/.test(username)) {
     throw new Error('Username must be 3–32 letters, numbers, or underscores');
   }
+}
+
+export async function hashPassword(password) {
   if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
     throw new Error('Password must be 8–128 characters');
   }
   const salt = randomBytes(16).toString('hex');
-  const passwordHash = (await derive(password, salt, 64, options)).toString('hex');
+  return {salt, passwordHash: (await derive(password, salt, 64, options)).toString('hex')};
+}
+
+export async function register(dbFile, username, password) {
+  validateUsername(username);
+  const {salt, passwordHash} = await hashPassword(password);
   const db = connect(dbFile);
   const id = randomUUID();
   const now = new Date().toISOString();
   db.exec('BEGIN');
   try {
-    db.prepare('INSERT INTO argument_user VALUES (?, ?, ?, ?, ?)').run(id, username, passwordHash, salt, now);
+    db.prepare('INSERT INTO argument_user (id, username, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?)').run(id, username, passwordHash, salt, now);
     db.prepare('INSERT INTO argument_identity VALUES (?, ?, ?, ?)').run(id, username, now, now);
     db.exec('COMMIT');
   } catch (error) {
@@ -40,10 +48,10 @@ export async function register(dbFile, username, password) {
 
 export async function login(dbFile, username, password) {
   if (typeof username !== 'string' || username.length > 32 || typeof password !== 'string' || password.length > 128) return null;
-  const user = connect(dbFile).prepare('SELECT * FROM argument_user WHERE username = ?').get(username);
+  const user = connect(dbFile).prepare(`SELECT u.*, COALESCE(a.disabled,0) AS disabled FROM argument_user u LEFT JOIN argument_user_access a ON a.user_id=u.id WHERE u.username = ?`).get(username);
   const actual = await derive(password, user?.password_salt ?? '00000000000000000000000000000000', 64, options);
   const expected = user ? Buffer.from(user.password_hash, 'hex') : Buffer.alloc(64);
-  if (!timingSafeEqual(actual, expected) || !user) return null;
+  if (!timingSafeEqual(actual, expected) || !user || user.disabled) return null;
   return { id: user.id, username: user.username };
 }
 
@@ -83,8 +91,9 @@ export function requireSession(dbFile, { loginRedirect } = {}) {
 export function sessionUser(dbFile, req) {
   const token = cookieToken(req);
   return token && connect(dbFile).prepare(`
-    SELECT u.id, u.username FROM argument_session s
+    SELECT u.id, u.username, COALESCE(a.role,'user') AS role FROM argument_session s
     JOIN argument_user u ON u.id = s.user_id
-    WHERE s.token_hash = ? AND s.expires_at > ?
+    LEFT JOIN argument_user_access a ON a.user_id=u.id
+    WHERE s.token_hash = ? AND s.expires_at > ? AND COALESCE(a.disabled,0)=0
   `).get(hash(token), Date.now());
 }

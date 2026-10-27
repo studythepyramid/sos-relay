@@ -8,6 +8,7 @@ import path from 'node:path';
 import { siteDir } from './settings.js';
 import { listArguments, getArgument } from './db.js';
 import { identicon } from './identicon.js';
+import { sourceReturnUrl } from './source.js';
 
 const PROFILE_LINK = '<a href="/user/" style="font-size:13px;color:#5f8a6e;text-decoration:none">[ account / log in ]</a>';
 
@@ -64,6 +65,7 @@ function page(title, bodyHtml) {
   return `<!doctype html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/site-favicon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
@@ -75,6 +77,8 @@ ${FONT_LINK}
   .breadcrumbs{font-size:15px;letter-spacing:.04em;overflow-wrap:anywhere}
   .breadcrumbs a{color:#7f9186}
   .breadcrumbs a:hover,.breadcrumbs a:focus-visible{color:#7bd88f}
+  .source-passage{margin:14px 20px 0;padding:14px;border:1px solid #2c4a37;overflow-wrap:anywhere}
+  .source-passage blockquote{margin:12px 0;white-space:pre-wrap;line-height:1.6}
   .reply-btn{background:none;border:none;padding:0;font-family:inherit;cursor:pointer;color:#5f8a6e;font-size:13px}
   .reply-btn:hover{color:#7bd88f;text-decoration:underline}
 </style>
@@ -109,6 +113,17 @@ function nodeBlock(node, nodesById, rootNodeId) {
     </div>`;
 }
 
+function sourceBlock(source) {
+  if (!source) return '';
+  return `<aside class="source-passage" aria-label="Source passage">
+    <strong>Quoted passage</strong>
+    <blockquote dir="auto">${escapeHtml(source.quote)}</blockquote>
+    <a href="${escapeHtml(sourceReturnUrl(source))}">${escapeHtml(source.title)} — view passage</a>
+    <p><small>Reader-supplied quotation · captured ${escapeHtml(source.capturedAt.slice(0, 10))}.
+    The discussion below is the poster's contribution.</small></p>
+  </aside>`;
+}
+
 export function renderThread(argumentRow) {
   const nodesById = new Map(argumentRow.nodes.map((n) => [n.id, n]));
   const nodes = argumentRow.nodes
@@ -121,10 +136,13 @@ export function renderThread(argumentRow) {
   <div style="padding:18px 20px 14px;border-bottom:1px solid #23302a;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
     <div style="min-width:0">
       ${breadcrumbs(argumentRow.slug)}
+      ${argumentRow.review?.reviewNote ? `<p style="font-size:13px;color:#a7bcab;margin:6px 0">${escapeHtml(argumentRow.review.reviewNote)}</p>` : ''}
       <div style="margin-top:6px;font-size:20px;font-weight:700;color:#eafaf0;line-height:1.4">${rootTitle}</div>
     </div>
     ${PROFILE_LINK}
   </div>
+
+  ${sourceBlock(argumentRow.source)}
 
   <div style="margin:14px 20px 0;padding:12px 14px;border:1px dashed #2c4a37">
     <div style="font-size:13px;color:#5f7268;letter-spacing:.04em">[ topic graph — reserved for later ]</div>
@@ -232,25 +250,25 @@ ${items || '    <div style="padding:24px 0;color:#5f7268">No threads yet.</div>'
   return page('Arguments', body);
 }
 
-export function regenerateThread(dbFile, slug) {
+export function regenerateThread(dbFile, slug, outputDir = siteDir) {
   const argumentRow = getArgument(dbFile, slug);
   if (!argumentRow) throw new Error(`Cannot regenerate unknown argument: ${slug}`);
-  writeAtomic(path.join(siteDir, argumentRow.slug, 'index.html'), renderThread(argumentRow));
+  writeAtomic(path.join(outputDir, argumentRow.slug, 'index.html'), renderThread(argumentRow));
   return argumentRow;
 }
 
-export function regenerateList(dbFile) {
+export function regenerateList(dbFile, outputDir = siteDir) {
   const rows = listArguments(dbFile);
-  writeAtomic(path.join(siteDir, 'index.html'), renderList(rows));
+  writeAtomic(path.join(outputDir, 'index.html'), renderList(rows));
   return rows;
 }
 
 // Regenerates every thread page plus the list, so a template change
 // (a code deploy) actually reaches already-existing pages instead of
 // leaving them stale until their next reply. Call on startup.
-export function regenerateAll(dbFile) {
+export function regenerateAll(dbFile, outputDir = siteDir) {
   const rows = listArguments(dbFile);
-  for (const row of rows) regenerateThread(dbFile, row.slug);
-  writeAtomic(path.join(siteDir, 'index.html'), renderList(rows));
+  for (const row of rows) regenerateThread(dbFile, row.slug, outputDir);
+  writeAtomic(path.join(outputDir, 'index.html'), renderList(rows));
   return rows;
 }

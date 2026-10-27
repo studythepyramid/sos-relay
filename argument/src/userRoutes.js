@@ -29,6 +29,7 @@ export function userRoutes(dbFile) {
   router.use(requireSession(dbFile));
   const profile = req => ({
     username: req.user.username,
+    role: req.user.role,
     displayName: getIdentity(dbFile, req.argumentToken)?.display_name ?? req.user.username,
     avatarSvg: identicon(req.argumentToken, 56),
   });

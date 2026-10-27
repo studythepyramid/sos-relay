@@ -19,8 +19,10 @@ Inbox guard: 1,000 messages per UTC day and 5,000 retained messages total.
 These are initial tunable values, not assertions that one cookie or IP
 identifies one person.
 
-All submissions start pending. This version has no Agent, public feed,
-automated moderation, or emergency dispatch. History returns only the
+Submissions start pending when automatic approval is off. The admin setting
+`auto_approve_all` can review pending and incoming messages automatically
+with the label **approved by auto**. There is no Agent, public feed, or
+emergency dispatch. History returns only the
 current guest's or account's latest 50 messages. Signing in does not claim
 guest history or migrate a guest's submissions. Registration does not
 bypass review or network/global limits. `kind` reserves remark/SOS storage
@@ -36,10 +38,10 @@ here means removing records from the active database; SQLite WAL, storage,
 and backups are not a guaranteed immediate secure-erasure mechanism.
 Network/session identifiers must never be copied into public output.
 
-Future moderation must record its actions and mark redactions without
-silently changing meaning. It needs explicit authorization boundaries
-before an Agent can modify or publish messages. Later SOS support needs
-location privacy, priority/capacity policy, expiry, and resolution handling.
+The administrator dashboard records manual review decisions with an
+operator note and preserves message text. Editing, redaction, and Agent
+moderation still require separate design before implementation. Later SOS
+support needs location privacy, priority/capacity policy, expiry, and resolution handling.
 
 Deployment: Caddy proxies `/publicMsg`, `/publicMsg/*`, `/api/publicMsg`,
 and `/api/publicMsg/*` to the existing loopback service on port 8000.
@@ -48,3 +50,53 @@ No extra paid service, AI API, or Node dependency is introduced.
 Run `npm test` inside `argument/` before deploying. Integration tests
 cover guest privacy, retry safety, multilingual counts, persistent quotas,
 registered limits, network throttling, and cleanup.
+
+## Operator review over SSH
+
+The `/admin/` dashboard provides private message review to explicitly
+authorized administrators; see [admin.md](admin.md). Ordinary website
+accounts cannot read other senders' messages. Operators with VPS access can
+inspect the inbox using this read-only command after deploying `src/review-messages.js`:
+
+```bash
+ssh lightsail.a 'cd /opt/sos-relay/argument && node src/review-messages.js'
+```
+
+By default it returns up to 20 pending messages, oldest first. To see the
+latest 50 messages across statuses:
+
+```bash
+ssh lightsail.a 'cd /opt/sos-relay/argument && node src/review-messages.js --status all --order newest --limit 50'
+```
+
+Output includes message reference, status, kind, word count, UTC date,
+sender type, account username when available, and message text. It omits
+owner/session tokens, request keys, password data, and network counters.
+Treat the output as private; do not copy it into the public website or
+Git. The command opens SQLite read-only and does not run cleanup or change
+review status. The dashboard can mark reviewed, reject, or return to
+pending with an audit record. Redaction is deferred.
+
+To inspect pending submissions before the command has been deployed:
+
+```bash
+ssh lightsail.a
+cd /opt/sos-relay/argument
+node --input-type=module <<'JS'
+import {DatabaseSync} from 'node:sqlite';
+import {dbPath} from './src/settings.js';
+const db = new DatabaseSync(dbPath, {readOnly: true});
+const messages = db.prepare(`
+  SELECT id, status, created_at, body FROM public_msg
+  WHERE status = ? ORDER BY created_at ASC LIMIT 20
+`).all('pending');
+console.log(JSON.stringify(messages, null, 2));
+db.close();
+JS
+```
+
+The visitor's history still loads only their own latest 50 submissions.
+Its display-order selector offers oldest-first (the default) and
+newest-first without changing which records are returned. The privacy
+notice uses a separate blue panel to distinguish it from the message form
+and history.

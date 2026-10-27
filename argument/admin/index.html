@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administration · SOS Relay</title>
+<link rel="icon" type="image/png" href="/assets/site-favicon.png">
+<link rel="stylesheet" href="/admin/dashboard.css">
+<script src="/admin/dashboard.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#workspace">Skip to workspace</a>
+<aside class="sidebar">
+<a class="brand" href="/">✳ SOS RELAY</a>
+<p class="sidebar-caption">SITE OPERATIONS</p>
+<nav aria-label="Administration">
+<a href="#overview" data-tab="overview" aria-current="page"><span>01</span> Overview</a>
+<a href="#users" data-tab="users"><span>02</span> User accounts</a>
+<a href="#messages" data-tab="messages"><span>03</span> Message review <b id="nav-pending">0</b></a>
+<a href="#arguments" data-tab="arguments"><span>04</span> Argument review <b id="nav-arguments">0</b></a>
+</nav>
+<div class="sidebar-bottom"><p>Private workspace</p><a href="/publicMsg/">Message form ↗</a><a href="/user/">Your account ↗</a><a href="/">Return to site ↗</a></div>
+</aside>
+<div class="shell">
+<header class="topbar"><nav aria-label="Breadcrumb"><a href="/">sosweb.org</a> / <a href="/admin/">admin</a></nav><div><span id="operator">Loading…</span><button id="logout" class="quiet">Log out</button></div></header>
+<main id="workspace" tabindex="-1">
+<p id="notice" role="status" aria-live="polite" hidden></p>
+<section id="overview-panel" data-panel="overview">
+<div class="page-heading"><div><p class="eyebrow">ADMINISTRATION</p><h1>A clear view of the site.</h1><p class="muted">Manage access. Review messages. Keep a record.</p></div><button id="refresh-overview">Refresh overview</button></div>
+<div class="metrics">
+<a href="#messages"><span>Awaiting review</span><strong id="pending-count">—</strong><small id="pending-breakdown">Messages and arguments</small></a>
+<a href="#users"><span>User accounts</span><strong id="user-count">—</strong><small id="disabled-count">Loading account status…</small></a>
+<a href="#users"><span>Active administrators</span><strong id="admin-count">—</strong><small>Explicitly granted access</small></a>
+</div>
+<section class="card approval-settings" aria-labelledby="approval-settings-heading"><div><h2 id="approval-settings-heading">Automatic approval</h2><p class="muted">When enabled, pending and new messages and arguments are reviewed automatically as “approved by auto”. Admin actions skip confirmation; role changes still require an authorized request.</p><p id="approval-mode-status" class="small" role="status">Loading approval mode…</p></div><label class="approval-switch"><input id="auto-approve-all" type="checkbox"> Auto approve all <code>auto_approve_all</code></label></section>
+<div class="section-heading"><h2>Recent operator activity</h2><span class="muted">Latest 15 actions · retained for 90 days</span></div>
+<div id="activity" class="activity-list"><p class="muted">Loading activity…</p></div>
+</section>
+<section id="users-panel" data-panel="users" hidden>
+<div class="page-heading"><div><p class="eyebrow">ACCESS & ACCOUNTS</p><h1>User accounts</h1><p class="muted">Search, inspect, and manage site access.</p></div></div>
+<form id="user-search-form" class="toolbar"><label>Find an account<input id="user-search" type="search" maxlength="100" placeholder="Username or display name"></label><button>Search</button><button type="button" id="refresh-users" class="quiet">Refresh</button></form>
+<div class="split">
+<div class="card"><div class="table-scroll"><table><thead><tr><th>Account</th><th>Access</th><th>Sessions</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="user-list"></tbody></table></div><div class="pager"><button id="users-prev" class="quiet">← Previous</button><span id="users-page"></span><button id="users-next" class="quiet">Next →</button></div></div>
+<aside class="card detail" id="user-detail" hidden><div class="detail-heading"><h2 id="detail-username"></h2><button id="close-user" class="quiet" aria-label="Close account details">×</button></div><p id="detail-meta" class="muted"></p>
+<form id="display-name-form"><label>Display name<input id="display-name" maxlength="40" required></label><button>Save display name</button></form>
+<div class="action-stack"><button id="toggle-access"></button><button id="revoke-sessions" class="quiet">Sign out all sessions</button><button id="reset-password" class="quiet">Set a new password</button><button id="toggle-role" class="quiet"></button></div>
+<p class="muted small">Display-name changes apply to future posts. Disabling an account or changing its password signs out all sessions.</p></aside>
+</div>
+<details class="card create-account"><summary>Create an account</summary><form id="create-user-form" class="create-grid"><label>Username<input name="username" required pattern="[a-zA-Z0-9_]{3,32}" minlength="3" maxlength="32" autocomplete="off"></label><label>Display name (optional)<input name="displayName" maxlength="40"></label><label>Initial password<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label><button>Create user account</button></form><p class="muted small">New accounts start with ordinary user access. Admin access is a separate action.</p></details>
+</section>
+<section id="messages-panel" data-panel="messages" hidden>
+<div class="page-heading"><div><p class="eyebrow">PRIVATE INBOX</p><h1>Message review</h1><p class="muted">Reviewing a message keeps it private. No action here publishes it.</p></div></div>
+<form id="message-filter-form" class="toolbar"><label>Status<select id="message-status"><option value="pending">Pending</option><option value="reviewed">Reviewed · private</option><option value="rejected">Rejected</option><option value="all">All statuses</option></select></label><label>Order<select id="message-order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><label class="grow">Find text<input id="message-search" type="search" maxlength="100" placeholder="Search message text"></label><button>Apply</button><button id="refresh-messages" type="button" class="quiet">Refresh</button></form>
+<div class="split inbox-split"><div class="card"><div id="message-list" class="message-list"></div><div class="pager"><button id="messages-prev" class="quiet">← Previous</button><span id="messages-page"></span><button id="messages-next" class="quiet">Next →</button></div></div>
+<article id="message-detail" class="card detail" hidden><div class="detail-heading"><h2>Message</h2><button id="close-message" class="quiet" aria-label="Close message details">×</button></div><p id="message-meta" class="muted small"></p><p id="message-reference" class="reference"></p><div id="message-body" class="message-body" dir="auto"></div><div class="review-actions"><button data-decision="reviewed">Mark reviewed · private</button><button data-decision="rejected" class="danger">Reject</button><button data-decision="pending" class="quiet">Return to pending</button></div><p class="muted small">Rejected messages expire within seven days of submission; other messages within 30 days. A default review note is supplied. Automatic approvals show “approved by auto”.</p></article></div>
+</section>
+<section id="arguments-panel" data-panel="arguments" hidden>
+<div class="page-heading"><div><p class="eyebrow">PUBLIC DISCUSSIONS</p><h1>Argument review</h1><p class="muted">Review the root contribution. Existing threads remain publicly readable.</p></div></div>
+<form id="argument-filter-form" class="toolbar"><label>Status<select id="argument-status"><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="all">All statuses</option></select></label><label>Order<select id="argument-order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><label class="grow">Find text<input id="argument-search" type="search" maxlength="100" placeholder="Title or root contribution"></label><button>Apply</button><button id="refresh-arguments" type="button" class="quiet">Refresh</button></form>
+<div class="split"><div class="card"><div id="argument-list" class="message-list"></div><div class="pager"><button id="arguments-prev" class="quiet">← Previous</button><span id="arguments-page"></span><button id="arguments-next" class="quiet">Next →</button></div></div>
+<article id="argument-detail" class="card detail" hidden><div class="detail-heading"><h2 id="argument-title"></h2><button id="close-argument" class="quiet" aria-label="Close argument details">×</button></div><p id="argument-meta" class="muted small"></p><a id="argument-link">Open public thread ↗</a><div id="argument-body" class="message-body" dir="auto"></div><div class="review-actions"><button data-argument-decision="reviewed">Mark reviewed</button><button data-argument-decision="pending" class="quiet">Return to pending</button></div></article></div>
+</section>
+
+</main>
+<footer>Shared site administration · <a href="/argument/">Arguments</a> · <a href="/publicMsg/">Public message form</a></footer>
+</div>
+<dialog id="confirm-dialog"><form id="confirm-form"><p class="eyebrow">CONFIRM ACTION</p><h2 id="confirm-title"></h2><p id="confirm-description" class="muted"></p><label id="new-password-label" hidden>New password<input id="new-password" type="password" minlength="8" maxlength="128" autocomplete="new-password"></label><label>Operator note<textarea id="operator-note" rows="3" maxlength="500" required placeholder="Why are you making this change?"></textarea></label><p class="muted small">This note is recorded in the audit log. Avoid personal details and passwords.</p><div class="dialog-actions"><button id="confirm-cancel" type="button" class="quiet">Cancel</button><button id="confirm-submit">Confirm</button></div></form></dialog>
+</body></html>

@@ -1,0 +1,25 @@
+---
+description: Commit za*.md changes and follow deploy.md.
+alwaysApply: true
+---
+
+Read the root `deploy.md` before committing, syncing, or deploying.
+
+For every commit, include all repository files whose basename matches
+`za*.md`, including new files, modifications, and tracked deletions at
+any depth. Re-read their current contents and stage them immediately
+before committing:
+
+```bash
+git add -A -- ':(glob)**/za*.md'
+```
+
+Unchanged files are already in the commit snapshot; do not edit them
+just to produce a diff. Preserve the user's text and newer edits.
+Stage other task files explicitly and review the full staged diff.
+Do not sweep unrelated changes into the commit. If required files have
+sensitive content, surface the conflict rather than silently exposing it.
+
+Use the Git production hook for the website and rsync for `/my/md/`.
+Do not publish the private `/my/` parent, caches, or credentials.
+Commit and deploy only within the user's authorized task scope.

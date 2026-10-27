@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/site-favicon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Your account</title>
@@ -23,6 +24,7 @@ body{margin:0;font-family:monospace;background:#0b0e0c;color:#cfe3d3}main{max-wi
 </section>
 <section id="profile" hidden>
 <p>Logged in as <strong id="username"></strong></p>
+<p id="admin-link" hidden><a href="/admin/">Administration dashboard →</a></p>
 <div id="avatar"></div>
 <form id="profile-form"><label>Display name<input name="displayName" required maxlength="40"></label><button>Save Display Name</button></form>
 <p>Display-name changes apply to future posts.</p>
@@ -33,6 +35,7 @@ body{margin:0;font-family:monospace;background:#0b0e0c;color:#cfe3d3}main{max-wi
 <script>
 const message = document.getElementById('message');
 // Only allow the known internal destination, never arbitrary redirect URLs.
+const returnToAdmin = new URLSearchParams(location.search).get('next') === '/admin/';
 const returnToNew = new URLSearchParams(location.search).get('next') === '/argument/new/';
 const returnToMessages = new URLSearchParams(location.search).get('next') === '/publicMsg/';
 async function request(path, data) {
@@ -52,11 +55,13 @@ async function refresh() {
   }
   if (!response.ok) throw new Error('Could not load your account. Please try again shortly.');
   const user = await response.json();
+  if (returnToAdmin) { location.replace('/admin/'); return; }
   if (returnToNew) { location.replace('/argument/new/'); return; }
   if (returnToMessages) { location.replace('/publicMsg/'); return; }
   document.getElementById('auth').hidden = true;
   document.getElementById('profile').hidden = false;
   document.getElementById('username').textContent = user.username;
+  document.getElementById('admin-link').hidden = user.role !== 'admin';
   document.getElementById('profile-form').elements.displayName.value = user.displayName;
   document.getElementById('avatar').innerHTML = user.avatarSvg;
 }

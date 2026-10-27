@@ -17,7 +17,13 @@ Reading remains public; creating arguments and replies requires a session.
   local development only.
 - Writes require JSON and `X-Argument-Request: 1` as a CSRF guard. Do not add
   permissive credentialed CORS. Existing per-IP rate limits also cover auth.
-- No email verification or password recovery is included yet.
+- `argument_user_access` adds explicit admin roles and disabled-account
+  state. Registration never grants admin access. Both login and session
+  checks reject disabled accounts; roles are checked on every request.
+- `/admin/` provides protected account management and private message
+  review. First access is granted through SSH. See [admin.md](admin.md).
+- No email verification or self-service password recovery is included yet;
+  administrators can set a new password and revoke existing sessions.
 
 Start/restart the service with `cd argument && npm start` to create the tables
 in the configured database and regenerate thread pages with the new client code.

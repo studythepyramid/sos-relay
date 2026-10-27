@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/site-favicon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Public messages · SOS Relay</title>
@@ -20,15 +21,15 @@
 <p id="feedback" role="status" aria-live="polite"></p>
 </form>
 <p id="upgrade" hidden><a href="/user/?next=%2FpublicMsg%2F">Create an account or log in</a> for a larger allowance. Accounts remain subject to limits and review.</p>
-<section aria-labelledby="privacy-heading">
+<section class="privacy-panel" aria-labelledby="privacy-heading">
 <h2 id="privacy-heading">Your connection and privacy</h2>
 <dl><dt>IP seen by this server</dt><dd id="ip">Loading…</dd><dt>Approximate location</dt><dd>Unavailable — no location lookup is performed.</dd><dt>Session reference</dt><dd id="reference">Loading…</dd><dt>Account</dt><dd id="account">Anonymous</dd></dl>
 <p>We use a temporary session and short-lived network counters to fight spam and network attacks. The reference above is a label, not your secret login token. An IP address can represent a VPN, proxy, or shared network; it does not reliably identify a person or location.</p>
 <p>Your raw IP is used to handle this request but is not stored with your message. We retain a keyed network fingerprint and traffic counters for up to 48 hours, then remove them automatically. Guest sessions expire after seven days. Clearing cookies loses access to guest history; logging in shows your account history instead.</p>
-<p>Messages are kept in this service's active database for up to 30 days; rejected messages for at most seven days from submission. Expired data is cleaned on requests and hourly while the service runs. These periods do not promise immediate erasure from backups or underlying storage.</p>
-<p>Messages may be reviewed, redacted, rejected, or removed. There is no automatic reviewer yet: submissions stay pending and are visible here only to you and authorized operators. Edited messages must be marked; review must preserve their meaning. Do not include passwords or unnecessary personal information.</p>
+<p>Administrative review metadata and operator notes may be retained for up to 90 days; the audit log does not copy message bodies. Messages are kept in this service's active database for up to 30 days; rejected messages for at most seven days from submission. Expired data is cleaned on requests and hourly while the service runs. These periods do not promise immediate erasure from backups or underlying storage.</p>
+<p>Messages may be reviewed, redacted, rejected, or removed. Submissions are visible here only to you and authorized operators. They await review unless automatic approval is enabled; automatic decisions are marked “approved by auto”. Operators may mark them reviewed or reject them; review does not publish them. Edited messages must be marked; review must preserve their meaning. Do not include passwords or unnecessary personal information.</p>
 <p><strong>This inbox is not an emergency dispatch service.</strong> Sending a message does not mean assistance has been requested or dispatched. A future SOS workflow will be introduced separately.</p>
 </section>
-<section aria-labelledby="history-heading"><h2 id="history-heading">Your messages</h2><p>Latest 50 submissions from this guest session or logged-in account. Other visitors cannot see them here.</p><button id="refresh" type="button">Refresh status</button><div id="history" aria-live="polite"></div></section>
+<section aria-labelledby="history-heading"><h2 id="history-heading">Your messages</h2><p>Latest 50 submissions from this guest session or logged-in account. Other visitors cannot see them here.</p><div class="history-controls"><label for="history-order">Display order <select id="history-order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><button id="refresh" type="button">Refresh status</button></div><div id="history" aria-live="polite"></div></section>
 <noscript>This page needs JavaScript to send messages and load your private history.</noscript>
 </main></body></html>

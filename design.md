@@ -343,6 +343,128 @@ Each check renders as a pass/fail row, and the page's subsequent
 steps (download → load → test TTS → test STT) are gated/adapted on the
 results rather than assuming one code path fits every browser.
 
+## Administration dashboard — 2026-10-26
+
+`/admin/` is the operator dashboard for account management and the private
+`/publicMsg/` review queue. The existing Express service handles both the
+page and `/api/admin/`; Caddy proxies these paths to it. Dashboard assets
+live outside the publicly served `argument/site/` directory so an alternate
+static URL cannot bypass access checks.
+
+Use the existing account session with an explicit administrator role.
+Existing and newly registered accounts remain ordinary users. Grant the
+first administrator through an SSH-only command, never by assuming that
+a particular username is an administrator. Disabled accounts cannot log
+in or use existing sessions. Every dashboard and API request checks access.
+
+The initial dashboard provides:
+
+- Overview counts and recent operator activity.
+- Searchable, paginated user lists; account creation; display-name changes;
+  enable/disable; password reset; session revocation; and role management.
+- A private message queue with status, search, date order, pagination, and
+  full-message inspection. Operators can mark reviewed, reject, or return
+  a message to pending. Reviewed messages remain private; no public feed
+  is introduced. Message editing and redaction are deferred.
+
+All writes require the existing JSON request guard and a recorded reason.
+Manual dialogs start with editable default reasons. The persistent admin
+setting `auto_approve_all` defaults to off. Enabling it immediately reviews
+existing pending messages and arguments, and new submissions are reviewed
+inside their creation transaction. Automatic reviews show **approved by
+auto** and record `approval: auto_approve` in the audit log.
+
+Automatic mode skips admin action confirmations; a requested role change
+still requires an authorized admin request, and passwords still need to be
+entered when setting them. Registration continues to create ordinary
+users. The username `auto` may be reserved by a real account; automatic
+reviews use the distinct system ID `system:auto-approval`. Disabling the
+setting affects future reviews without undoing previous decisions.
+Explicit rejections remain rejected. Return-to-pending requires turning
+automatic mode off first.
+Record actions atomically in an audit log, omitting passwords, session
+secrets, network identifiers, and message bodies. Keep audit events for
+90 days. Preserve existing message retention periods. Version message
+reviews to reject stale decisions from another tab or reviewer.
+
+Prevent self-disable, self-demotion, and removal of the last active admin.
+Revoke sessions when disabling an account or resetting its password.
+Use no-store responses and a restrictive content security policy for the
+dashboard. Show admin navigation only to authorized accounts, while
+enforcing authorization independently on the server.
+
+Implementation and bootstrap instructions: [argument/admin.md](argument/admin.md).
+
+Local dashboard demo: username `Operator`, password
+`dashboard-preview-password` (`Operator/dashboard-preview-password`).
+These are synthetic preview credentials, not a production account or a
+default password. The demo runs with a separate temporary database;
+production admin access is granted explicitly to an existing account.
+
+## Site-wide arguments attached to passages — 2026-10-26
+
+Extend `/argument/` so a reader can select a passage anywhere on the
+public site and start a discussion connected to its source. Caddy keeps
+serving static pages; shared browser JavaScript captures the selection,
+and the existing Express service authenticates users and creates threads.
+The detailed argument subsystem design is in
+[argument/design.md](argument/design.md).
+
+### Reader flow
+
+1. Select text in a supported page's reading area. Show a dismissible
+   **Discuss this passage** action near the selection, with keyboard and
+   touch support. Ignore navigation, form fields, and editable content.
+2. Open `/argument/new/` with a draft containing the quotation, source
+   title, and source link. Ask what the reader wants to question or
+   discuss. Keep their contribution separate from the quoted passage.
+3. Preserve the draft in the current browser tab through login and
+   recoverable submission errors. Selecting text does not publish it.
+   If browser storage is unavailable, explain the problem before leaving
+   the source page. Do not place the quotation in URL query parameters.
+4. Require the existing account session to publish. Let the reader review
+   and edit their title and contribution, or remove the attached passage.
+   Clear the saved draft after successful publication or explicit discard.
+5. Display the source quotation and attribution on the thread, with a
+   link back to the passage. The quoting user is not the quoted author.
+
+### Source attachment and return link
+
+Store source metadata separately from the root claim in SQLite: source
+URL, page title, exact selected text, short text before and after it,
+nearest section anchor when available, language, and capture time.
+Existing threads without attachments continue working.
+
+Validate attachments on the server, accepting bounded plain text and
+public `sosweb.org` URLs. Render text with HTML escaping. A submitted
+quotation is a reader-supplied snapshot; it is not proof of authorship or
+that the source page was verified by the server.
+
+On return, use the quotation and surrounding text to locate and highlight
+the passage. Keep the original section anchor as a fallback. If the source
+changed or the match is ambiguous, explain that the exact passage cannot
+be located rather than highlighting unrelated text. Retain the original
+quotation in the thread even when its source changes.
+
+### Coverage and delivery
+
+Start with MkDocs reading pages, including History Notes, using shared
+JavaScript and CSS through the existing site configuration. Standalone
+HTML pages and the Markdown viewer can load the same assets. Door pages
+are published separately from `/my/md/` and need their own integration
+and upload step. Avoid changing or duplicating their translations.
+
+The first implementation includes selection, draft review, login
+continuation, attachment storage, thread attribution, and passage return
+highlighting. Verify desktop and mobile selection, keyboard access,
+Chinese and right-to-left text, migration of an existing database, and
+existing thread creation without a source attachment.
+
+Later additions can provide a page-level discussion count, existing
+threads for the selected passage, and an option to join one before
+starting another. Keep publisher freedom assessments separate from
+discussion activity; thread counts are not evidence or danger scores.
+
 ## Explicitly deferred to a later phase
 
 - **Dynamic backend** (translation editor UI, signal-relay API): separate

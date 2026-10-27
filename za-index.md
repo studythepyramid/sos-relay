@@ -38,34 +38,3 @@
     Public downloads. The folder lives on the VPS outside the MkDocs build, so a site rebuild does not delete it.
 
 
-```
-nav:
-
-  # about.md should be left along for user editing
-  - Doors to the real Internet: doors.2026-09.md
-
-  - ~/dev/media-scripts/voice/server.py is a Flask backend. 
-    It listens on 127.0.0.1:5057 and serves the page in static/.
-
-     The three buttons are Play/Pause, Rec/Rec-Stop and Rec-Play. 
-     Recording uses pw-record plus the same ffmpeg filter chain as vrecord.sh, and playback uses mpv.
-
-  - on vps to do the english speak lessons, failed.
-  - Voice samples:
-      - English: samples/tts-stt-en.md
-      - Chinese: samples/tts-stt-cn.md
-  - Guide:
-      - TTS/STT (offline): guide/tts-stt.md
-  - Notes:
-      - Client-side TTS/STT design: notes/web-ttsstt.md
-```
-
-## Folders
-
-- [guide/](guide/)
-- [notes/](notes/)
-
-## Files
-
-- [about](about.md)
-- [old.index](old.index.md)

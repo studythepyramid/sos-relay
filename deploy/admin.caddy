@@ -1,0 +1,6 @@
+# Insert inside the existing sosweb.org site block; validate and reload Caddy.
+# Never serve argument/admin/ from a public static root.
+@administration path /admin /admin/* /api/admin /api/admin/*
+handle @administration {
+    reverse_proxy 127.0.0.1:8000
+}

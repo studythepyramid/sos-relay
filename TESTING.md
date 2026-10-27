@@ -70,3 +70,54 @@ exists:
 - [ ] One-time bare-repo setup on the VPS (`design.md` → CI/CD section)
 - [ ] First `git push production main` — confirm Caddy serves it and
       issues a TLS cert once the domain resolves
+
+## Passage discussions
+
+Run `cd argument && npm test` for the source-attachment migration, URL
+validation, escaped rendering, atomic writes, and authenticated API tests.
+These tests use temporary databases and output directories.
+
+For browser checks, use an isolated local preview and test account:
+
+- Select a passage on a MkDocs reading page. Confirm the discussion action
+  opens a draft and that the quotation is separate from the contribution.
+- Follow login or registration and confirm the quotation survives. Write a
+  contribution, reload, and confirm the title and body are restored.
+- Simulate a failed submission; the draft must remain available. Publish
+  successfully and confirm the draft is cleared and the source is shown.
+- Follow the source link. Confirm a unique quotation is highlighted;
+  repeated quotations require matching context. Missing or ambiguous
+  quotations must show a message without highlighting unrelated text.
+- Check Chinese, Persian, inline emphasis, and selections across paragraphs.
+- Check a narrow touch viewport, Escape dismissal, and Alt+Shift+D keyboard
+  access to the action. Verify form inputs do not offer quotations.
+- Block session storage and confirm an explanation appears before leaving
+  the source page. Remove a quotation or discard a draft and confirm those
+  choices persist. Ordinary threads must still work without a quotation.
+
+The initial integration covers MkDocs, selected standalone HTML pages,
+and the Markdown viewer. Door HTML has a separate publication workflow;
+its language pages do not yet load the shared discussion widget.
+
+## Administration dashboard
+
+The Node test suite covers role-gated pages and APIs, registration without
+role escalation, disabled accounts, session revocation, account controls,
+last-admin protection, additive migration without automatic grants,
+versioned private message reviews, retention, and atomic rollback when
+an audit write fails. Tests use temporary databases and synthetic users.
+
+For a browser preview, use a separate database and explicitly grant a test
+account admin access. Verify login returns to `/admin/`; the overview,
+user search, account edit confirmation, message filters and review work;
+ordinary users receive 403; message HTML is shown as text; and mobile
+layouts have no horizontal overflow. Keep real messages and credentials
+out of screenshots. See `argument/admin.md` for deployment and SSH setup.
+
+
+Administration approval tests also cover default and edited notes,
+versioned `auto_approve_all` settings, automatic review of pending and new
+messages/arguments, no automatic role grant to registrations, the reserved
+`auto` username, and rollback if automatic auditing fails. Browser checks
+verify prefilled dialogs, confirmation-free authorized actions, persistent
+mode, public argument labels, private sender history, and mobile layout.

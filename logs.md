@@ -1,5 +1,30 @@
 # SOS Relay — project log
 
+## 2026-10-27
+
+**Local admin dashboard: default notes and automatic approval.**
+
+- Local demo login: `Operator/dashboard-preview-password` (username
+  `Operator`, password `dashboard-preview-password`). These are synthetic
+  preview credentials for a separate temporary database, not a default
+  production login. No production admin grant is implied by this entry.
+- Review dialogs provide an editable default reason. `/admin/` includes
+  `auto_approve_all`, a persistent setting that starts disabled. Enabling
+  it reviews existing pending messages and arguments; new submissions are
+  reviewed in their creation transaction. Display: **approved by auto**;
+  audit marker: `auto_approve`.
+- Automatic mode skips confirmation for authorized admin actions, including
+  requested role changes. It never promotes new registrations on its own.
+  A real account named `auto` stays separate from the system review ID
+  `system:auto-approval`.
+- Added argument review alongside the private inbox. Automatic review does
+  not publish messages or change existing argument visibility. Rejected
+  messages remain rejected. Turning the mode off restores manual review
+  for future submissions without undoing previous decisions.
+- Verified with 31 Node tests and desktop/mobile browser checks.
+  Included in the site deployment bundle with the normal Git workflow.
+
+
 ## 2026-10-26
 
 **Published a read-only download folder and a projects page.**

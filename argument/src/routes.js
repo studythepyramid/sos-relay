@@ -4,7 +4,7 @@ import { regenerateThread, regenerateList } from './render.js';
 import { rateLimit, requireJsonWrite } from './middleware.js';
 import { requireSession } from './auth.js';
 
-export function argumentRoutes(dbFile) {
+export function argumentRoutes(dbFile, outputDir) {
   const router = Router();
 
   router.use(rateLimit);
@@ -13,11 +13,11 @@ export function argumentRoutes(dbFile) {
 
   // POST /api/argument  { title, body }
   router.post('/', (req, res) => {
-    const { title, body } = req.body ?? {};
+    const { title, body, source } = req.body ?? {};
     try {
-      const created = createArgument(dbFile, { title, body, ownerToken: req.argumentToken });
-      regenerateThread(dbFile, created.slug);
-      regenerateList(dbFile);
+      const created = createArgument(dbFile, { title, body, ownerToken: req.argumentToken, source });
+      regenerateThread(dbFile, created.slug, outputDir);
+      regenerateList(dbFile, outputDir);
       res.status(201).json(created);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -34,7 +34,7 @@ export function argumentRoutes(dbFile) {
         body,
         authorToken: req.argumentToken,
       });
-      regenerateThread(dbFile, req.params.slug);
+      regenerateThread(dbFile, req.params.slug, outputDir);
       res.status(201).json(result);
     } catch (err) {
       res.status(400).json({ error: err.message });

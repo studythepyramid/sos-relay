@@ -9,7 +9,7 @@ extra:
 
 theme:
   name: material
-  favicon: assets/site-icon.png
+  favicon: assets/site-favicon.png
   logo: assets/site-icon.png
   language: en
   font: false
@@ -33,10 +33,12 @@ hooks:
   - scripts/homepage.py
 
 extra_javascript:
+  - assets/passage-discussion.js
   - assets/voice-widget.js
   - assets/capability-probe.js
 
 extra_css:
+  - assets/passage-discussion.css
   - assets/voice-widget.css
   - assets/site-theme.css
 

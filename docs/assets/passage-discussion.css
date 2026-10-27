@@ -1,0 +1,6 @@
+.sos-passage-tools,.sos-passage-status{position:fixed;z-index:10000;display:flex;gap:.5rem;align-items:center;max-width:calc(100vw - 16px);box-sizing:border-box;padding:.5rem;background:#14231a;color:#eafaf0;border:1px solid #7bd88f;border-radius:6px;box-shadow:0 3px 16px #0006;font:14px/1.5 system-ui,sans-serif}
+.sos-passage-tools[hidden],.sos-passage-status[hidden]{display:none}
+.sos-passage-tools button,.sos-passage-status button{font:inherit;cursor:pointer;border:1px solid #7bd88f;background:#14231a;color:#eafaf0;border-radius:4px;padding:.4rem .6rem}
+.sos-passage-tools button:focus-visible,.sos-passage-status button:focus-visible{outline:3px solid #ffe082;outline-offset:2px}
+.sos-passage-status{bottom:1rem;left:50%;transform:translateX(-50%);width:max-content}
+::highlight(sos-passage){background:#ffe082;color:#171a14}

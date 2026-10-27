@@ -9,6 +9,9 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { dbPath as DEFAULT_PATH } from './settings.js';
 
+import { normalizeSource } from './source.js';
+import {autoReview} from './approval.js';
+
 export { DEFAULT_PATH };
 
 // Deterministic, friendly display names — not identity, just a stable
@@ -178,6 +181,44 @@ export function initialize(dbFile = DEFAULT_PATH) {
   `);
   db.prepare("INSERT OR IGNORE INTO schema_migrations VALUES ('argument', 3, ?)")
     .run(new Date().toISOString());
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS argument_source (
+      argument_id INTEGER PRIMARY KEY REFERENCES argument(id) ON DELETE CASCADE,
+      metadata_json TEXT NOT NULL
+    );
+  `);
+  db.prepare("INSERT OR IGNORE INTO schema_migrations VALUES ('argument', 4, ?)")
+    .run(new Date().toISOString());
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS argument_user_access (
+      user_id TEXT PRIMARY KEY REFERENCES argument_user(id) ON DELETE CASCADE,
+      role TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','admin')),
+      disabled INTEGER NOT NULL DEFAULT 0 CHECK(disabled IN (0,1)),
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS admin_audit (
+      id INTEGER PRIMARY KEY, actor_id TEXT NOT NULL, actor_name TEXT NOT NULL,
+      action TEXT NOT NULL, target_type TEXT NOT NULL, target_id TEXT NOT NULL,
+      details_json TEXT NOT NULL, created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS admin_audit_time ON admin_audit(created_at);
+  `);
+  db.prepare("INSERT OR IGNORE INTO schema_migrations VALUES ('argument', 5, ?)")
+    .run(new Date().toISOString());
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      key TEXT PRIMARY KEY, value TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1,
+      updated_by TEXT NOT NULL, updated_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS argument_review (
+      argument_id INTEGER PRIMARY KEY REFERENCES argument(id) ON DELETE CASCADE,
+      decision TEXT NOT NULL CHECK(decision IN ('pending','reviewed')),
+      reviewed_by TEXT NOT NULL, reviewed_at INTEGER NOT NULL,
+      revision INTEGER NOT NULL DEFAULT 1
+    );
+  `);
+  db.prepare("INSERT OR IGNORE INTO schema_migrations VALUES ('argument', 6, ?)")
+    .run(new Date().toISOString());
   return db;
 }
 
@@ -205,11 +246,14 @@ function randomDigits(n) {
 // unit. Collision on the random 4-digit slug suffix retries with a fresh
 // suffix rather than checking existence first — cheap, and correct under
 // concurrent writers, which a check-then-insert isn't.
-export function createArgument(dbFile = DEFAULT_PATH, { title, body, ownerToken }) {
+export function createArgument(dbFile = DEFAULT_PATH, { title, body, ownerToken, source }) {
   if (typeof title !== 'string' || !title.trim()) throw new Error('Title is required');
   if (typeof body !== 'string' || !body.trim()) throw new Error('Claim body is required');
   if (typeof ownerToken !== 'string' || !ownerToken.trim()) throw new Error('Owner token is required');
 
+  if (title.trim().length > 200) throw new Error('Title must be 200 characters or fewer');
+  if (body.trim().length > 4000) throw new Error('Claim must be 4000 characters or fewer');
+  const attachment = normalizeSource(source);
   const db = connect(dbFile);
   const now = new Date().toISOString();
   const base = `${timestampPrefix()}-${slugify(title)}`;
@@ -217,28 +261,37 @@ export function createArgument(dbFile = DEFAULT_PATH, { title, body, ownerToken 
     "INSERT INTO argument (slug, title, owner_token, status, created_at) VALUES (?, ?, ?, 'public', ?)"
   );
 
-  let slug;
-  let argumentId;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    slug = `${base}-${randomDigits(4)}`;
-    try {
-      const info = insertArgument.run(slug, title.trim(), ownerToken, now);
-      argumentId = Number(info.lastInsertRowid);
-      break;
-    } catch (err) {
-      if (attempt === 4) throw err;
+  db.exec('BEGIN');
+  try {
+    let slug;
+    let argumentId;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      slug = `${base}-${randomDigits(4)}`;
+      try {
+        const info = insertArgument.run(slug, title.trim(), ownerToken, now);
+        argumentId = Number(info.lastInsertRowid);
+        break;
+      } catch (err) {
+        if (attempt === 4) throw err;
+      }
     }
+
+    const label = resolveLabel(dbFile, ownerToken);
+    const nodeInfo = db.prepare(
+      `INSERT INTO argument_node (argument_id, author_token, author_label, body, node_type, created_at)
+       VALUES (?, ?, ?, ?, 'claim', ?)`
+    ).run(argumentId, ownerToken, label, body.trim(), now);
+    const rootNodeId = Number(nodeInfo.lastInsertRowid);
+    db.prepare('UPDATE argument SET root_node_id = ? WHERE id = ?').run(rootNodeId, argumentId);
+
+    if (attachment) db.prepare('INSERT INTO argument_source VALUES (?, ?)').run(argumentId, JSON.stringify(attachment));
+    autoReview(db, 'argument', argumentId);
+    db.exec('COMMIT');
+    return { id: argumentId, slug, title: title.trim() };
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
   }
-
-  const label = resolveLabel(dbFile, ownerToken);
-  const nodeInfo = db.prepare(
-    `INSERT INTO argument_node (argument_id, author_token, author_label, body, node_type, created_at)
-     VALUES (?, ?, ?, ?, 'claim', ?)`
-  ).run(argumentId, ownerToken, label, body.trim(), now);
-  const rootNodeId = Number(nodeInfo.lastInsertRowid);
-  db.prepare('UPDATE argument SET root_node_id = ? WHERE id = ?').run(rootNodeId, argumentId);
-
-  return { id: argumentId, slug, title: title.trim() };
 }
 
 // Adds a reply: a node plus the edge pointing at what it replies to.
@@ -289,7 +342,12 @@ export function getArgument(dbFile = DEFAULT_PATH, slug) {
     WHERE n.argument_id = ?
     ORDER BY n.created_at, n.id
   `).all(argumentRow.id);
-  return { ...argumentRow, nodes };
+  const attachment = db.prepare('SELECT metadata_json FROM argument_source WHERE argument_id = ?').get(argumentRow.id);
+  const review = db.prepare(`SELECT decision AS status,revision,reviewed_at AS reviewedAt,
+    CASE WHEN reviewed_by='system:auto-approval' THEN 'auto_approve' END AS approval,
+    CASE WHEN reviewed_by='system:auto-approval' THEN 'approved by auto' END AS reviewNote
+    FROM argument_review WHERE argument_id=?`).get(argumentRow.id) || null;
+  return { ...argumentRow, nodes, review, source: attachment ? JSON.parse(attachment.metadata_json) : null };
 }
 
 export function listArguments(dbFile = DEFAULT_PATH) {

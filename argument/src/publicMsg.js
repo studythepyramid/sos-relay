@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { connect } from './db.js';
 import { cookieOptions, sessionUser } from './auth.js';
+import {autoReview, AUTO_REASON} from './approval.js';
 import { requireJsonWrite } from './middleware.js';
 
 const DAY = 86400000;
@@ -25,6 +26,12 @@ export function initializePublicMsg(dbFile) {
       created_at INTEGER NOT NULL, UNIQUE(owner, request_key)
     );
     CREATE INDEX IF NOT EXISTS public_msg_owner_time ON public_msg(owner, created_at);
+    CREATE TABLE IF NOT EXISTS public_msg_review (
+      message_id TEXT PRIMARY KEY REFERENCES public_msg(id) ON DELETE CASCADE,
+      decision TEXT NOT NULL CHECK(decision IN ('pending','reviewed','rejected')),
+      reviewed_by TEXT NOT NULL, reviewed_at INTEGER NOT NULL,
+      revision INTEGER NOT NULL DEFAULT 1
+    );
     CREATE TABLE IF NOT EXISTS public_msg_quota (
       owner TEXT NOT NULL, day INTEGER NOT NULL, messages INTEGER NOT NULL,
       words INTEGER NOT NULL, PRIMARY KEY(owner, day)
@@ -105,7 +112,7 @@ export function publicMsgRoutes(dbFile, { clock = Date.now } = {}) {
 
   router.get('/', (req, res) => {
     const person = req.msgPerson;
-    const messages = connect(dbFile).prepare('SELECT id, body, words, status, created_at AS createdAt FROM public_msg WHERE owner = ? ORDER BY created_at DESC LIMIT 50').all(person.owner);
+    const messages = connect(dbFile).prepare(`SELECT p.id, p.body, p.words, COALESCE(r.decision,p.status) AS status, p.created_at AS createdAt, CASE WHEN r.reviewed_by='system:auto-approval' THEN 'auto_approve' END AS approval, CASE WHEN r.reviewed_by='system:auto-approval' THEN 'approved by auto' END AS reviewNote FROM public_msg p LEFT JOIN public_msg_review r ON r.message_id=p.id WHERE p.owner = ? ORDER BY p.created_at DESC, p.id DESC LIMIT 50`).all(person.owner);
     res.json({ ip: req.ip, location: null, reference: person.reference, registered: person.registered, username: person.username,
       quota: quota(dbFile, person, clock()), messages });
   });
@@ -144,11 +151,12 @@ export function publicMsgRoutes(dbFile, { clock = Date.now } = {}) {
       const id = randomUUID();
       db.prepare('INSERT INTO public_msg (id, owner, request_key, body, words, body_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .run(id, person.owner, requestKey, text, words, hash, now);
+      const automaticallyReviewed = autoReview(db, 'message', id);
       db.prepare(`INSERT INTO public_msg_quota VALUES (?, ?, 1, ?)
         ON CONFLICT(owner, day) DO UPDATE SET messages = messages + 1, words = words + excluded.words`)
         .run(person.owner, Math.floor(now / DAY), words);
       db.exec('COMMIT');
-      res.status(201).json({ id, status: 'pending', quota: quota(dbFile, person, now) });
+      res.status(201).json({ id, status: automaticallyReviewed ? 'reviewed' : 'pending', approval: automaticallyReviewed ? 'auto_approve' : null, reviewNote: automaticallyReviewed ? AUTO_REASON : null, quota: quota(dbFile, person, now) });
     } catch (error) {
       db.exec('ROLLBACK');
       throw error;
