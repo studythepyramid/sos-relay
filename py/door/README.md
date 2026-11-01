@@ -96,6 +96,10 @@ previously edited translations. Do not publish the cache or review tree.
 
 The existing notes rsync workflow can publish these files later. With
 normal static index handling, `/tecNotes/door/` opens the English page.
+The short URL `/door/` serves the same files using `deploy/door.caddy`;
+language paths work under both addresses. Markdown at the short URL redirects
+to the existing technical-notes viewer. Sibling-note HTML links use absolute
+`/tecNotes/` paths so they work from either address.
 Explicit `index.html` links also work when directory indexes differ.
 This tool neither runs rsync nor changes Caddy settings.
 
@@ -116,3 +120,20 @@ node --check py/door/templates/door.js
 After generating output, check all four pages in a browser, including
 mobile width, Persian direction, language switching, closing the
 floating menu, and whether dismissal survives a same-tab page change.
+
+## Refresh the theme without translating
+
+Door uses the homepage's `/assets/site-theme.css` variables, logo and favicon,
+with dark green fallback colors and the same monospace font. For a style-only
+update, copy the installed directory into `tmp/door-theme/public/`, record the
+current English source SHA-256 in `tmp/door-theme/source.sha256`, then run:
+
+```bash
+.venv/bin/python py/door/refresh_theme.py tmp/door-theme/public
+.venv/bin/python py/door/verify.py --public tmp/door-theme/public
+.venv/bin/python py/door/install.py --build tmp/door-theme
+```
+
+This preserves the installed article text and translations. Publish only
+`door.css`, `index.html`, and `{ru,fa,zh}/index.html` for a theme-only update.
+Validate and reload Caddy after installing the short-URL configuration.

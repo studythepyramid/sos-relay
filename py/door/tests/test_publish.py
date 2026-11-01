@@ -48,7 +48,7 @@ class PublicationTests(unittest.TestCase):
                 self.assertNotIn('{{', page)
             persian = (public / 'fa/index.html').read_text()
             self.assertIn('lang="fa" dir="rtl"', persian)
-            self.assertIn('href="../../doors.md"', persian)
+            self.assertIn('href="/tecNotes/doors.md"', persian)
             self.assertIn('href="../readme.md"', persian)
             original = (public / 'readme.md').read_text()
             self.assertEqual(p.NAV.sub('', original).strip(), source.strip())

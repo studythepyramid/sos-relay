@@ -231,6 +231,12 @@ For a Door-only update, use `/my/md/door/` as the source and
 keeping all flags and exclusions. Check that referenced sibling notes,
 such as `doors.md` and `bypass.gfw.md`, already exist on the VPS.
 
+The Door short URL `/door/` serves `/my/md/door/` using
+[`deploy/door.caddy`](deploy/door.caddy), inserted into the Caddy site block.
+The original `/tecNotes/door/` address remains available. Markdown at the
+short URL redirects to the technical-notes viewer. Validate the complete
+Caddy configuration before installing it and reloading Caddy.
+
 ## 6. Push the committed website to the VPS
 
 Once `main` contains the reviewed deployment and any required notes have

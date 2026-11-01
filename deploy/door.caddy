@@ -1,0 +1,11 @@
+# Insert inside sosweb.org, before the general static-site handle.
+# Markdown keeps the existing notes viewer and relative Markdown links.
+redir /door /door/ 308
+@door_markdown path_regexp ^/door/.*\.md$
+redir @door_markdown /tecNotes{uri} 308
+handle_path /door/* {
+    root * /my/md/door
+    file_server {
+        hide .* *.swp *.swo *~
+    }
+}

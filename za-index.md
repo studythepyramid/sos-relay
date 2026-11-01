@@ -5,7 +5,7 @@
     Linux commands, Ubuntu server admin. AI and Agents.
 
 
-- [Doors](/tecNotes/door/)
+- [Doors](/door/)
     Setup notes for agents: open a door for a user. English, plus Russian, Persian, and Chinese.
 
 - [Argument](/argument/)

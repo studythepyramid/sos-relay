@@ -13,6 +13,7 @@ import textwrap
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urljoin, urlsplit
 
 import markdown
 
@@ -290,6 +291,9 @@ def export(source, translations, args):
         notice = '' if language == 'en' else f'{NOTICE[language]}\n\n[English source](readme.md)\n\n'
         atomic(public / file, nav + '\n\n' + notice + content.strip() + '\n\n' + nav + '\n')
         rendered = markdown.markdown(content, extensions=['fenced_code', 'tables'])
+        # Sibling notes must resolve under /tecNotes/ from either public URL.
+        rendered = re.sub(r'href="([^"]+)"',
+                          lambda m: 'href="' + note_link(m[1], '/tecNotes/door/') + '"', rendered)
         if language != 'en':
             rendered = re.sub(r'href="(?![a-zA-Z]+:|/|#)([^"]+)"',
                               lambda m: 'href="../' + m[1] + '"', rendered)
@@ -309,6 +313,14 @@ def export(source, translations, args):
             page = page.replace('{{' + key + '}}', value)
         path = public / ('index.html' if language == 'en' else f'{language}/index.html')
         atomic(path, page)
+
+
+def note_link(link, base):
+    url = urlsplit(link)
+    if url.scheme or url.netloc or not url.path or url.path.startswith('/'):
+        return link
+    resolved = urljoin(base, link)
+    return resolved if not urlsplit(resolved).path.startswith('/tecNotes/door/') else link
 
 
 def main():
