@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101216">
+  <meta name="description"
+    content="Type a short message and show it in screen-filling text.">
+  <title>Big Text · Show your message</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main id="editor" class="editor">
+    <header>
+      <p class="eyebrow">TYPE IT. SHOW IT.</p>
+      <h1>A big message on phone display for a noisy place.</h1>
+    </header>
+    <form id="message-form">
+      <label for="message">Your message</label>
+      <textarea id="message" rows="3" maxlength="240" required
+        aria-describedby="message-help" enterkeyhint="enter"></textarea>
+      <div class="field-note" id="message-help">
+        <span>Keep it short for bigger letters.</span>
+        <span id="count">0 / 240</span>
+      </div>
+      <div class="presets" aria-label="Example messages">
+        <button type="button" data-message="YES">YES</button>
+        <button type="button" data-message="NO">NO</button>
+        <button type="button" data-message="STOP">STOP</button>
+        <button type="button" data-message="DANGER">DANGER</button>
+        <button type="button" data-message="STAND BACK">
+          STAND BACK</button>
+        <button type="button" data-message="WATCH OUT">
+          WATCH OUT</button>
+      </div>
+      <button class="show" type="submit">Show message <span
+        aria-hidden="true">↗</span></button>
+      <fieldset>
+        <legend>Display colour</legend>
+        <label class="colour-option">
+          <input type="radio" name="colour" value="dark" checked>
+          White on black
+        </label>
+        <label class="colour-option">
+          <input type="radio" name="colour" value="light">
+          Black on white
+        </label>
+      </fieldset>
+    </form>
+    <footer>
+      <p>Unlock your phone’s rotation and turn it sideways for larger
+        letters. Controls hide after a moment; tap the message to
+        bring them back.</p>
+      <p>Adjust your screen brightness for the light around you.</p>
+      <p>Your message stays on this device. No sign-in needed.</p>
+    </footer>
+    <noscript>Please enable JavaScript to fit and display messages.
+    </noscript>
+  </main>
+  <section id="display" class="display" hidden tabindex="-1"
+    aria-label="Message display">
+    <nav class="toolbar" aria-label="Display controls">
+      <button id="edit" type="button">← Edit</button>
+      <div class="size-controls" aria-label="Text size">
+        <button id="smaller" type="button"
+          aria-label="Smaller text">A−</button>
+        <button id="fit" type="button">Fit</button>
+        <button id="larger" type="button"
+          aria-label="Larger text">A+</button>
+      </div>
+      <button id="fullscreen" type="button"
+        aria-label="Enter fullscreen">⛶</button>
+    </nav>
+    <div id="message-area" class="message-area">
+      <div id="big-message" class="big-message" dir="auto"></div>
+    </div>
+  </section>
+</body>
+</html>

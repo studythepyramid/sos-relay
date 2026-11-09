@@ -1,3 +1,41 @@
+# 2026 nov 3, 0129 utc
+
+## how to let user chat without server?
+
+If users has smart phones, android first,
+how to have an Android App to do group chat without server?
+
+## Survivor App
+
+An Android App that implements many functionalities on sosweb.org
+it open doors, pull AI Agents, setup networks, mark dangerous on map,
+team up and moving together on map, etc.
+it help people send out SOS msg in worst enviroments, 
+for example, network blocking, language sencorship, 
+evil communist persecution, economic bankcrupt, jobless, foodless.
+While the cheaters has all supports,
+the cheaters close in around and working hard to trap the user,
+cheaters and so called secrect polices work together with
+slavery industry camp,  human organ harvesting teams,
+check points to eye on smart phone by force,
+they're supported by tele-communication companies,
+they can query state owned database to catch users,
+it's not limited by the worse cases state here.
+
+The App should help user setup a virtual church,
+share information, get survive over the bad time.
+And once the sos msg get fact checking, with the help of AI, 
+the helpers could start the arguments and actions.
+
+The first needed is obviously the sos messages and the doors for it.
+
+The sosweb should also get this focus, 
+the vps is the first node for the sosweb.
+Poweruser should be able to clone and setup their own nodes,
+and the nodes should be able to communication with each others.
+
+
+# before
 
 1, how to deal the 1% user editing for the translation?
 2, simplify the android map UI, get rid of all the Text informations on the UI, keep only May, msg input. Add voice, camera.

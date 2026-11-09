@@ -23,6 +23,8 @@
 - [Church Building](/church/)
     Explore a stone chapel in 3D: orbit, pan, zoom, and look inside.
 
+- [Big Text](/big-text/)
+    Show big text on phone display as warning signs.
 
 - [History Notes](/history_notes/)
     The builder of this site guesses that the humanities should be
