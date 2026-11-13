@@ -8,6 +8,7 @@ import {hashPassword, validateUsername} from './auth.js';
 import {autoApproveAll, approvePending, DEFAULT_REASONS, AUTO_ACTOR, automaticDetails} from './approval.js';
 import {rateLimit, requireJsonWrite} from './middleware.js';
 import {requireAdmin, atomicAdmin, accessUser, activeAdmins, audit, changeRole, operatorNote, actionNote, problem} from './adminAccess.js';
+import {adminNoteRoutes, noteCounts} from './notes.js';
 
 export function adminHeaders(_req, res, next) {
   res.set('Cache-Control', 'no-store');
@@ -42,7 +43,7 @@ const messageFields = `p.id,p.created_at AS createdAt,p.words,p.kind,COALESCE(r.
   CASE WHEN r.reviewed_by='system:auto-approval' AND r.decision='reviewed' THEN 'auto_approve' END AS approval,
   CASE WHEN r.reviewed_by='system:auto-approval' AND r.decision='reviewed' THEN 'approved by auto' END AS reviewNote`;
 
-export function adminRoutes(dbFile, {outputDir = siteDir} = {}) {
+export function adminRoutes(dbFile, {outputDir = siteDir, notesDir, rebuildSite = () => {}} = {}) {
   const router = express.Router();
   router.use(adminHeaders, requireAdmin(dbFile), requireJsonWrite);
   router.use((req, res, next) => ['GET','HEAD'].includes(req.method) ? next() : rateLimit(req, res, next));
@@ -55,7 +56,7 @@ export function adminRoutes(dbFile, {outputDir = siteDir} = {}) {
       .map(({details_json, ...row}) => ({...row, details: JSON.parse(details_json)}));
     const settings = db.prepare("SELECT value,revision FROM admin_settings WHERE key='auto_approve_all'").get();
     const argumentCounts = db.prepare("SELECT COALESCE(r.decision,'pending') AS status,count(*) AS n FROM argument a LEFT JOIN argument_review r ON r.argument_id=a.id WHERE a.status='public' GROUP BY COALESCE(r.decision,'pending')").all();
-    res.json({settings: {auto_approve_all: settings?.value === 'true', revision: settings?.revision || 0}, defaultReasons: DEFAULT_REASONS, arguments: Object.fromEntries(argumentCounts.map(row => [row.status,row.n])), user: {id: req.adminUser.id, username: req.adminUser.username}, users: {...users, disabled: users.disabled || 0, admins: activeAdmins(db)}, messages: Object.fromEntries(messageCounts.map(row => [row.status, row.count])), events});
+    res.json({settings: {auto_approve_all: settings?.value === 'true', revision: settings?.revision || 0}, defaultReasons: DEFAULT_REASONS, arguments: Object.fromEntries(argumentCounts.map(row => [row.status,row.n])), notes: noteCounts(dbFile), user: {id: req.adminUser.id, username: req.adminUser.username}, users: {...users, disabled: users.disabled || 0, admins: activeAdmins(db)}, messages: Object.fromEntries(messageCounts.map(row => [row.status, row.count])), events});
   });
   router.get('/settings', (_req, res) => {
     const row = connect(dbFile).prepare("SELECT value,revision FROM admin_settings WHERE key='auto_approve_all'").get();
@@ -222,6 +223,7 @@ export function adminRoutes(dbFile, {outputDir = siteDir} = {}) {
       res.json({ok: true});
     } catch (error) { next(error); }
   });
+  adminNoteRoutes(router, dbFile, {notesDir, rebuildSite});
   router.use((error, _req, res, _next) => {
     const validation = /^(Username|Password|Display name)/.test(error.message);
     res.status(error.status || (validation ? 400 : 500)).json({error: error.status || validation ? error.message : 'Administration request failed.'});

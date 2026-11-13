@@ -242,6 +242,7 @@ argument/site/*
 !argument/site/new/
 !argument/site/user/
 !argument/site/publicMsg/
+!argument/site/notes/
 
 # Server-owned databases and Belt & Road collection artifacts: never source code.
 *.db

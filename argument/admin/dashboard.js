@@ -1,7 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const state = {operator: null, users: [], usersPage: 1, messagesPage: 1, selectedUser: null, selectedMessage: null, selectedArgument: null, arguments: [], argumentsPage: 1, settings: {auto_approve_all: false, revision: 0}, defaultReasons: {}};
-let usersRequest = 0, messagesRequest = 0, argumentsRequest = 0, resolvingDialog, preparingDialog = false;
+const state = {operator: null, users: [], usersPage: 1, messagesPage: 1, selectedUser: null, selectedMessage: null, selectedArgument: null, arguments: [], argumentsPage: 1, notesPage: 1, selectedNote: null, settings: {auto_approve_all: false, revision: 0}, defaultReasons: {}};
+let usersRequest = 0, messagesRequest = 0, argumentsRequest = 0, notesRequest = 0, resolvingDialog, preparingDialog = false;
 const date = value => new Date(value).toLocaleString();
 function element(tag, text, className) {
   const node = document.createElement(tag); if (text != null) node.textContent = text;
@@ -27,15 +27,17 @@ function syncApproval(settings) {
   $('approval-mode-status').textContent = settings.auto_approve_all ? 'ON · approved by auto' : 'OFF · default notes are editable before confirmation';
 }
 function reviewBadge(item) { const node = badge(item.status); if (item.reviewNote) node.textContent = item.reviewNote; return node; }
-async function ask(title, description, {password = false, danger = false, reason = 'Approved by administrator.'} = {}) {
+// `always` keeps the confirmation for actions automatic approval does not cover (notes).
+async function ask(title, description, {password = false, danger = false, always = false, reason = 'Approved by administrator.'} = {}) {
   if (preparingDialog || resolvingDialog) return null;
   preparingDialog = true;
   try { syncApproval(await request('/settings')); }
   catch (error) { notice(error.message, true); return null; }
   finally { preparingDialog = false; }
-  if (state.settings.auto_approve_all && !password) return {reason: 'approved by auto', password: ''};
+  const automatic = state.settings.auto_approve_all && !always;
+  if (automatic && !password) return {reason: 'approved by auto', password: ''};
   $('confirm-form').reset(); $('confirm-title').textContent = title; $('confirm-description').textContent = description;
-  $('operator-note').value = state.settings.auto_approve_all ? 'approved by auto' : reason;
+  $('operator-note').value = automatic ? 'approved by auto' : reason;
   $('new-password-label').hidden = !password; $('new-password').required = password;
   $('confirm-submit').className = danger ? 'danger' : '';
   $('confirm-dialog').showModal();
@@ -58,10 +60,10 @@ async function overview() {
   state.defaultReasons = data.defaultReasons; syncApproval(data.settings);
   $('operator').textContent = data.user.username;
   const pending = data.messages.pending || 0;
-  const pendingArguments = data.arguments.pending || 0;
-  $('pending-count').textContent = pending + pendingArguments; $('nav-pending').textContent = pending; $('nav-arguments').textContent = pendingArguments;
-  document.querySelector('.metrics > a').href = pending || !pendingArguments ? '#messages' : '#arguments';
-  $('pending-breakdown').textContent = `${pending} messages · ${pendingArguments} arguments`;
+  const pendingArguments = data.arguments.pending || 0, pendingNotes = data.notes?.pending || 0;
+  $('pending-count').textContent = pending + pendingArguments + pendingNotes; $('nav-pending').textContent = pending; $('nav-arguments').textContent = pendingArguments; $('nav-notes').textContent = pendingNotes;
+  document.querySelector('.metrics > a').href = pending ? '#messages' : pendingArguments ? '#arguments' : pendingNotes ? '#notes' : '#messages';
+  $('pending-breakdown').textContent = `${pending} messages · ${pendingArguments} arguments · ${pendingNotes} notes`;
   $('user-count').textContent = data.users.total; $('disabled-count').textContent = `${data.users.disabled} disabled · ${data.users.total - data.users.disabled} enabled`;
   $('admin-count').textContent = data.users.admins;
   const activity = $('activity'); activity.replaceChildren();
@@ -245,19 +247,72 @@ $('argument-filter-form').onsubmit = event => { event.preventDefault(); state.ar
 $('refresh-arguments').onclick = () => run(argumentsList);
 $('arguments-prev').onclick = () => { state.argumentsPage--; $('argument-detail').hidden = true; run(argumentsList); };
 $('arguments-next').onclick = () => { state.argumentsPage++; $('argument-detail').hidden = true; run(argumentsList); };
+const noteStatus = note => note.live && note.status !== 'published' ? `${note.status} · earlier version live` : note.status;
+async function notesList() {
+  const token = ++notesRequest;
+  const query = new URLSearchParams({page: state.notesPage, status: $('note-status').value, order: $('note-order').value, search: $('note-search').value});
+  const data = await request('/notes?' + query); if (token !== notesRequest) return;
+  $('note-list').replaceChildren();
+  for (const item of data.notes) {
+    const button = element('button', null, 'message-item'); button.type = 'button';
+    const heading = element('span'); heading.append(badge(item.status), element('time', date(item.updatedAt)));
+    button.append(heading, element('strong', item.title), element('span', item.excerpt, 'excerpt'), element('small', `${item.username || 'Former account'} · ${item.format === 'md' ? 'Markdown' : 'plain text'}${item.live ? ' · live' : ''}`));
+    button.onclick = () => run(() => openNote(item.id)); $('note-list').append(button);
+  }
+  if (!data.notes.length) $('note-list').append(element('p', 'No notes match these filters.', 'message-body muted'));
+  pagination('notes', data, 'notes');
+}
+async function openNote(id) {
+  const note = await request('/notes/' + encodeURIComponent(id));
+  state.selectedNote = note; $('note-detail').hidden = false;
+  $('note-title').textContent = note.title; $('note-body').textContent = note.body;
+  $('note-meta').textContent = `${noteStatus(note)} · ${note.format === 'md' ? 'Markdown' : 'plain text'} · ${note.username || 'Former account'} · updated ${date(note.updatedAt)}`;
+  $('note-link').hidden = !note.url; if (note.url) $('note-link').href = note.url;
+  for (const button of document.querySelectorAll('[data-note-decision]')) {
+    const decision = button.dataset.noteDecision;
+    button.disabled = decision === 'removed' ? !note.live : note.status === decision;
+  }
+}
+function closeNote() { state.selectedNote = null; $('note-detail').hidden = true; }
+$('close-note').onclick = closeNote;
+for (const button of document.querySelectorAll('[data-note-decision]')) button.onclick = async () => {
+  const note = state.selectedNote; if (!note) return;
+  const decision = button.dataset.noteDecision;
+  const copy = {
+    published: ['Publish note', 'Writes this version into docs/notes/ and rebuilds the site. It becomes public within a minute.'],
+    rejected: ['Reject note', note.live ? 'This version is not published. The earlier approved version stays online.' : 'The note stays unpublished.'],
+    removed: ['Remove note from the site', 'Deletes the published page and rebuilds the site.'],
+  }[decision];
+  const result = await ask(copy[0] + ' — ' + note.title, copy[1], {always: true, danger: decision === 'removed', reason: state.defaultReasons.note?.[decision]});
+  if (!result) return;
+  await run(async () => {
+    try {
+      await request('/notes/' + encodeURIComponent(note.id) + '/review', {decision, revision: note.revision, reason: result.reason});
+      closeNote(); notice(decision === 'rejected' ? 'Note rejected.' : 'Saved. The site is rebuilding.');
+      await Promise.all([notesList(), overview()]);
+    } catch (error) {
+      if (error.status === 409) await openNote(note.id);
+      throw error;
+    }
+  });
+};
+$('note-filter-form').onsubmit = event => { event.preventDefault(); state.notesPage = 1; closeNote(); run(notesList); };
+$('refresh-notes').onclick = () => run(notesList);
+$('notes-prev').onclick = () => { state.notesPage--; closeNote(); run(notesList); };
+$('notes-next').onclick = () => { state.notesPage++; closeNote(); run(notesList); };
 $('refresh-overview').onclick = () => run(overview);
 $('logout').onclick = () => run(async () => {
   const response = await fetch('/api/user/logout', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Argument-Request': '1'}, body: '{}'});
   if (!response.ok) throw new Error('Could not log out. Try again.'); location.assign('/user/');
 });
 async function navigate() {
-  const tab = ['overview','users','messages','arguments'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+  const tab = ['overview','users','messages','arguments','notes'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
   for (const panel of document.querySelectorAll('[data-panel]')) panel.hidden = panel.dataset.panel !== tab;
   for (const link of document.querySelectorAll('[data-tab]')) {
     if (link.dataset.tab === tab) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
   }
-  document.title = `${tab === 'users' ? 'User accounts' : tab === 'messages' ? 'Message review' : tab === 'arguments' ? 'Argument review' : 'Overview'} · SOS Relay Admin`;
-  if (tab === 'users') await users(); else if (tab === 'messages') await messages(); else if (tab === 'arguments') await argumentsList();
+  document.title = `${tab === 'users' ? 'User accounts' : tab === 'messages' ? 'Message review' : tab === 'arguments' ? 'Argument review' : tab === 'notes' ? 'Note review' : 'Overview'} · SOS Relay Admin`;
+  if (tab === 'users') await users(); else if (tab === 'messages') await messages(); else if (tab === 'arguments') await argumentsList(); else if (tab === 'notes') await notesList();
 }
 window.addEventListener('hashchange', () => run(navigate));
 run(async () => { await overview(); await navigate(); });

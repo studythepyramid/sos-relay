@@ -249,9 +249,34 @@ git push production main
 
 `origin` stores the repository on GitHub. `production` runs the VPS
 post-receive hook, which updates `/opt/sos-relay` and performs affected
-build steps. Changes to `docs/church/` or `za-index.md` rebuild MkDocs.
-Node application changes can trigger dependency installation or restart;
-plain notes or static-site edits normally do not restart the Node app.
+build steps. Changes under `docs/`, `overrides/`, `mkdocs.yml`,
+`za-index.md`, or the MkDocs scripts (`scripts/homepage.py`,
+`scripts/user_notes.py`, `scripts/build-site.sh`) rebuild MkDocs.
+Changes to `argument/src/` or `argument/settings.toml` restart the Node
+app; `argument/package*.json` also reinstalls dependencies. Static pages
+under `argument/site/` and `argument/admin/` need neither.
+
+The checkout also holds runtime files the hook keeps but Git does not
+track: approved user notes in `/opt/sos-relay/docs/notes/` (see
+[argument/notes.md](argument/notes.md)) and the database under `var/`.
+Back them up together. The Node service runs `scripts/build-site.sh`
+after a note is approved; the script's `var/site-build.lock` keeps it
+from overlapping a deploy build.
+
+### Caddy changes
+
+Some features need routes in `/etc/caddy/Caddyfile` (for example
+`deploy/admin.caddy`, `deploy/door.caddy`, `deploy/notes.caddy`). Push
+the code first, so Node already serves the new routes. Then, on the VPS:
+
+```bash
+sudo cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-<feature>-$(date -u +%Y%m%dT%H%M%SZ)
+sudoedit /etc/caddy/Caddyfile   # insert the snippet where its comment says
+sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl reload caddy
+```
+
+If validation fails, restore the backup instead of reloading.
 
 Read the push output through `deploy: complete`. A successful transfer
 of Git objects alone does not prove that the deployment hook succeeded.

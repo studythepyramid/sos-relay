@@ -52,7 +52,7 @@ else
                 node_install=1 node_restart=1 ;;
         esac
         case "$path" in
-            docs/*|overrides/*|mkdocs.yml|mkdocs.yaml|za-index.md|scripts/homepage.py|scripts/build-site.sh)
+            docs/*|overrides/*|mkdocs.yml|mkdocs.yaml|za-index.md|scripts/homepage.py|scripts/user_notes.py|scripts/build-site.sh)
                 site_build=1 ;;
         esac
         case "$path" in

@@ -17,6 +17,7 @@
 <a href="#users" data-tab="users"><span>02</span> User accounts</a>
 <a href="#messages" data-tab="messages"><span>03</span> Message review <b id="nav-pending">0</b></a>
 <a href="#arguments" data-tab="arguments"><span>04</span> Argument review <b id="nav-arguments">0</b></a>
+<a href="#notes" data-tab="notes"><span>05</span> Note review <b id="nav-notes">0</b></a>
 </nav>
 <div class="sidebar-bottom"><p>Private workspace</p><a href="/publicMsg/">Message form ↗</a><a href="/user/">Your account ↗</a><a href="/">Return to site ↗</a></div>
 </aside>
@@ -27,7 +28,7 @@
 <section id="overview-panel" data-panel="overview">
 <div class="page-heading"><div><p class="eyebrow">ADMINISTRATION</p><h1>A clear view of the site.</h1><p class="muted">Manage access. Review messages. Keep a record.</p></div><button id="refresh-overview">Refresh overview</button></div>
 <div class="metrics">
-<a href="#messages"><span>Awaiting review</span><strong id="pending-count">—</strong><small id="pending-breakdown">Messages and arguments</small></a>
+<a href="#messages"><span>Awaiting review</span><strong id="pending-count">—</strong><small id="pending-breakdown">Messages, arguments, and notes</small></a>
 <a href="#users"><span>User accounts</span><strong id="user-count">—</strong><small id="disabled-count">Loading account status…</small></a>
 <a href="#users"><span>Active administrators</span><strong id="admin-count">—</strong><small>Explicitly granted access</small></a>
 </div>
@@ -58,6 +59,12 @@
 <form id="argument-filter-form" class="toolbar"><label>Status<select id="argument-status"><option value="pending">Pending</option><option value="reviewed">Reviewed</option><option value="all">All statuses</option></select></label><label>Order<select id="argument-order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><label class="grow">Find text<input id="argument-search" type="search" maxlength="100" placeholder="Title or root contribution"></label><button>Apply</button><button id="refresh-arguments" type="button" class="quiet">Refresh</button></form>
 <div class="split"><div class="card"><div id="argument-list" class="message-list"></div><div class="pager"><button id="arguments-prev" class="quiet">← Previous</button><span id="arguments-page"></span><button id="arguments-next" class="quiet">Next →</button></div></div>
 <article id="argument-detail" class="card detail" hidden><div class="detail-heading"><h2 id="argument-title"></h2><button id="close-argument" class="quiet" aria-label="Close argument details">×</button></div><p id="argument-meta" class="muted small"></p><a id="argument-link">Open public thread ↗</a><div id="argument-body" class="message-body" dir="auto"></div><div class="review-actions"><button data-argument-decision="reviewed">Mark reviewed</button><button data-argument-decision="pending" class="quiet">Return to pending</button></div></article></div>
+</section>
+<section id="notes-panel" data-panel="notes" hidden>
+<div class="page-heading"><div><p class="eyebrow">PUBLISHED PAGES</p><h1>Note review</h1><p class="muted">Publishing writes the note into docs/notes/ and rebuilds the site. Automatic approval does not apply to notes.</p></div></div>
+<form id="note-filter-form" class="toolbar"><label>Status<select id="note-status"><option value="pending">Pending</option><option value="published">Published</option><option value="rejected">Rejected</option><option value="removed">Removed</option><option value="all">All statuses</option></select></label><label>Order<select id="note-order"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><label class="grow">Find text<input id="note-search" type="search" maxlength="100" placeholder="Title or contents"></label><button>Apply</button><button id="refresh-notes" type="button" class="quiet">Refresh</button></form>
+<div class="split"><div class="card"><div id="note-list" class="message-list"></div><div class="pager"><button id="notes-prev" class="quiet">← Previous</button><span id="notes-page"></span><button id="notes-next" class="quiet">Next →</button></div></div>
+<article id="note-detail" class="card detail" hidden><div class="detail-heading"><h2 id="note-title"></h2><button id="close-note" class="quiet" aria-label="Close note details">×</button></div><p id="note-meta" class="muted small"></p><a id="note-link" hidden>Open published page ↗</a><div id="note-body" class="message-body" dir="auto"></div><div class="review-actions"><button data-note-decision="published">Publish</button><button data-note-decision="rejected" class="quiet">Reject</button><button data-note-decision="removed" class="danger">Remove from site</button></div><p class="muted small">The text above is shown as written, not rendered. Rejecting an edit keeps an earlier approved version online; Remove takes the page down.</p></article></div>
 </section>
 
 </main>

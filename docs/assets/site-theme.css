@@ -27,3 +27,28 @@
 ::selection { background: #2c4a37; color: #eafaf0; }
 .md-header { border-bottom: 1px solid #23302a; box-shadow: none; }
 .md-tabs { border-bottom: 1px solid #23302a; }
+
+/* Bound the layout on every screen; reserve generous margins on desktop. */
+.md-grid {
+  box-sizing: border-box;
+  max-width: 1280px;
+}
+.md-content { min-width: 0; }
+.md-typeset { overflow-wrap: anywhere; }
+@media screen and (min-width: 64em) {
+  .md-grid {
+    width: 80%;
+    margin-inline: auto;
+  }
+}
+/* Keep reading content in one vertical column on mobile and small tablets.
+   Material retains its collapsible navigation drawer. */
+@media screen and (max-width: 63.999em) {
+  .md-grid {
+    width: calc(100% - 6px);
+    margin-inline: auto;
+  }
+  .md-main__inner { display: block; }
+  .md-sidebar--secondary { display: none; }
+  .md-content { margin-inline: 0; }
+}

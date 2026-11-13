@@ -1,0 +1,7 @@
+# Insert inside the sosweb.org site block, before the general static-site handle.
+# Published notes under /notes/ stay static MkDocs output; only the editor
+# page and its API go to Node.
+@notes path /notes/edit /notes/edit/* /api/notes /api/notes/*
+handle @notes {
+    reverse_proxy 127.0.0.1:8000
+}

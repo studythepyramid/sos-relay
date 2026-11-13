@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-md-color-scheme="slate">
+<head>
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/site-favicon.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes · SOS Relay</title>
+<link rel="stylesheet" href="/assets/app-theme.css">
+<link rel="stylesheet" href="/notes/edit/page.css">
+<script src="/notes/edit/page.js" defer></script>
+</head>
+<body>
+<a class="app-skip" href="#app-main">Skip to content</a>
+<header class="app-header"><div class="app-grid app-header-row"><a class="app-brand" href="/"><img src="/assets/site-favicon.png" alt="" width="26" height="26">SOS Relay</a><a class="app-account-link" href="/user/?next=%2Fnotes%2Fedit%2F">Your account</a></div></header>
+<nav class="app-tabs" aria-label="Site navigation"><div class="app-grid app-tabs-row"><a href="/">Home</a><a href="/argument/">Arguments</a><a href="/publicMsg/">Leave a message</a><a href="/notes/edit/" aria-current="page">Notes</a><a href="https://sosweb.org/tecNotes/">Technical notes</a><a href="https://sosweb.org/history_notes/">History</a></div></nav>
+<main id="app-main" class="app-grid app-main app-reading">
+<nav class="app-breadcrumbs" aria-label="Breadcrumb"><a href="/">sosweb.org</a>/<a href="/notes/edit/" aria-current="page">notes</a></nav>
+<h1>Notes</h1>
+<p class="app-intro">Write a note with a title, in Markdown or plain text. An administrator reviews each note before it is published under <code>/notes/</code>. Edits go back to review; the last approved version stays online until then.</p>
+<p id="signin" class="app-notice" hidden><a href="/user/?next=%2Fnotes%2Fedit%2F">Log in or create an account</a> to write notes. Published notes below are open to everyone.</p>
+<form id="note-form" class="app-form" hidden>
+<h2 id="form-heading">New note</h2>
+<label for="title">Title</label>
+<input id="title" maxlength="200" required autocomplete="off" aria-describedby="title-help">
+<p id="title-help" class="small">One line, up to 200 characters. Titles cannot contain &lt; &gt; &amp; or ".</p>
+<label for="format">Format</label>
+<select id="format"><option value="md">Markdown</option><option value="txt">Plain text</option></select>
+<label for="body">Contents</label>
+<textarea id="body" rows="16" required aria-describedby="count format-help"></textarea>
+<p id="count" class="small">0 / 100,000 characters</p>
+<p id="format-help" class="small">Markdown notes cannot contain raw HTML. Put code, including tags, in backticks or a fenced code block.</p>
+<div class="app-actions"><button id="save" class="app-button-primary">Save for review</button><button id="new-note" type="button">New note</button></div>
+<p id="feedback" class="app-status" role="status" aria-live="polite"></p>
+</form>
+<section id="mine" aria-labelledby="mine-heading" hidden>
+<div class="list-heading"><h2 id="mine-heading">Your notes</h2><label id="all-toggle" hidden><input id="show-all" type="checkbox"> Show every author's notes</label></div>
+<div id="mine-list" aria-live="polite"></div>
+</section>
+<section aria-labelledby="published-heading">
+<h2 id="published-heading">Published notes</h2>
+<div id="published-list" aria-live="polite"><p>Loading…</p></div>
+</section>
+<noscript>This page needs JavaScript to load and save notes.</noscript>
+</main>
+<footer class="app-footer"><div class="app-grid"><span>SOS Relay</span><a href="/">Home</a><a href="https://sosweb.org/help-list/">Help resources</a></div></footer>
+</body></html>

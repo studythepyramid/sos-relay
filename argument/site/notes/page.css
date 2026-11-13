@@ -1,0 +1,12 @@
+/* Notes editor; public Node pages share /assets/app-theme.css. */
+#note-form h2 { margin: 0; }
+#note-form p { margin: 0; }
+#note-form .small, .note-item small { color: var(--app-muted); font-size: .8125rem; }
+#body { font-family: var(--md-code-font-family, monospace); line-height: 1.5; }
+#save { justify-self: start; }
+main > section { border-top: 1px solid var(--app-line); margin-top: 2rem; padding-top: 1rem; }
+.list-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.note-item { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem 1rem; padding: .9rem 0; border-bottom: 1px solid var(--app-line); }
+.note-item > div { display: grid; gap: .2rem; min-width: 0; }
+.note-item strong { overflow-wrap: anywhere; }
+.note-item .app-actions { gap: .5rem; }

@@ -31,6 +31,7 @@ plugins:
 
 hooks:
   - scripts/homepage.py
+  - scripts/user_notes.py
 
 extra_javascript:
   - assets/passage-discussion.js

@@ -38,6 +38,7 @@ const message = document.getElementById('message');
 const returnToAdmin = new URLSearchParams(location.search).get('next') === '/admin/';
 const returnToNew = new URLSearchParams(location.search).get('next') === '/argument/new/';
 const returnToMessages = new URLSearchParams(location.search).get('next') === '/publicMsg/';
+const returnToNotes = new URLSearchParams(location.search).get('next') === '/notes/edit/';
 async function request(path, data) {
   const response = await fetch('/api/user' + path, data === undefined ? {} : {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Argument-Request': '1' }, body: JSON.stringify(data),
@@ -58,6 +59,7 @@ async function refresh() {
   if (returnToAdmin) { location.replace('/admin/'); return; }
   if (returnToNew) { location.replace('/argument/new/'); return; }
   if (returnToMessages) { location.replace('/publicMsg/'); return; }
+  if (returnToNotes) { location.replace('/notes/edit/'); return; }
   document.getElementById('auth').hidden = true;
   document.getElementById('profile').hidden = false;
   document.getElementById('username').textContent = user.username;

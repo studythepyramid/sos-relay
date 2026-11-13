@@ -4,6 +4,7 @@ export const AUTO_ACTOR = {id: 'system:auto-approval', username: 'Auto approval'
 export const DEFAULT_REASONS = {
   message: {reviewed: 'Reviewed by administrator.', rejected: 'Rejected by administrator.', pending: 'Returned to pending review.'},
   argument: {reviewed: 'Argument reviewed by administrator.', pending: 'Argument returned to pending review.'},
+  note: {published: 'Note approved and published.', rejected: 'Note rejected; any earlier approved version stays published.', removed: 'Note removed from the site.'},
   user: {role: 'Updated user role.', access: 'Updated account access.', sessions: 'Signed out account sessions.', displayName: 'Updated display name.', password: 'Reset account password.', create: 'Created user account.'},
 };
 export function autoApproveAll(db) {

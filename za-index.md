@@ -18,6 +18,10 @@
 - [Leave a message](/publicMsg/)
     Text messages for review, with no account required.
 
+- [Notes](/notes/edit/)
+    Write a text or Markdown note with a title. Logged-in users only;
+    each note is published under /notes/ after an administrator approves it.
+
 - [Dangerous Map](/dangerous-map/), A map marking the dangerous locations.
 
 - [Church Building](/church/)

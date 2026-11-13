@@ -10,9 +10,13 @@ import { newArgumentPage } from './pageRoutes.js';
 import { dbPath, port, siteDir, beltRoadDbPath, repoRoot } from './settings.js';
 import { beltRoadRoutes } from './beltRoad.js';
 import { initializePublicMsg, cleanupPublicMsg, publicMsgRoutes } from './publicMsg.js';
+import { initializeNotes, notesRoutes } from './notes.js';
+import { siteBuilder } from './siteBuild.js';
 
 initialize(dbPath);
 initializePublicMsg(dbPath);
+initializeNotes(dbPath);
+const rebuildSite = siteBuilder();
 cleanupAdminAudit(dbPath);
 setInterval(() => cleanupAdminAudit(dbPath), 3600000).unref();
 setInterval(() => cleanupPublicMsg(dbPath), 3600000).unref();
@@ -33,8 +37,8 @@ app.get('/', (_req, res) => {
   res.redirect(302, 'https://sosweb.org/');
 });
 // Same favicon URL as Caddy's static site, also available in Node-only previews.
-app.get('/assets/site-favicon.png', (_req, res) => {
-  res.sendFile(path.join(repoRoot, 'docs/assets/site-favicon.png'));
+app.get(['/assets/site-favicon.png', '/assets/site-theme.css', '/assets/app-theme.css'], (req, res) => {
+  res.sendFile(path.join(repoRoot, 'docs/assets', path.basename(req.path)));
 });
 app.use('/api/belt-road', beltRoadRoutes(beltRoadDbPath));
 app.use('/api/publicMsg', express.json({ limit: '64kb' }), publicMsgRoutes(dbPath));
@@ -45,8 +49,16 @@ app.use('/publicMsg', (req, res, next) => {
   res.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");
   next();
 }, express.static(path.join(siteDir, 'publicMsg')));
+app.use('/api/notes', express.json({ limit: '512kb' }), notesRoutes(dbPath));
+app.use('/notes/edit', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'same-origin');
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'");
+  next();
+}, express.static(path.join(siteDir, 'notes')));
 app.use(express.json({ limit: '48kb' }));
-app.use('/api/admin', adminRoutes(dbPath));
+app.use('/api/admin', adminRoutes(dbPath, { rebuildSite }));
 app.use('/admin', adminPage(dbPath, path.join(repoRoot, 'argument/admin')));
 app.use('/api/argument', argumentRoutes(dbPath));
 app.use('/api/user', userRoutes(dbPath));
