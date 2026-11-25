@@ -1,5 +1,31 @@
 # SOS Relay — project log
 
+## 2026-11-25
+
+**FDT clip upload on sosweb.org (`/handclips/`), for the Android app.**
+
+- Installed `tusd` v2.10.3 (tus resumable uploads) as systemd service `tusd`
+  on the VPS, loopback port 1080; data in `/var/handclips` (owner `tusd`).
+  Caddy forwards `/handclips/files/*` to it and answers `/handclips/ping`.
+  The Caddyfile was backed up as `/etc/caddy/Caddyfile.before-handclips-<time>`
+  and Caddy reloaded after `caddy validate`. Nothing else in the site block
+  changed.
+- Rules (za): no invite token for now; temporary player id made by the app
+  (date, time, phone model, random); total quota 10 GB; no delete function yet.
+  Hooks refuse any name that is not a safe `.mp4`/`.json`, a bad player id,
+  files over 200 MB (mp4) or 1 MB (json), and anything past the quota.
+- Tested from the PC through the proxy: ping, upload with resume
+  (HEAD offset), POST-with-override chunks, refusals (bad name, bad
+  extension, bad player id). Test files removed. The phone (SM-A736B) got
+  `HTTP 200: ok` from `/handclips/ping`.
+- Files: `deploy/handclips/` (`README.md`, `install.sh`, `tusd.service`,
+  `handclips.caddy`, `hooks/pre-create`, `hooks/post-finish`).
+- Not done: invite token, player ids from the site, delete by player id,
+  hand-only crops, encryption. Open risk: with no token, anyone who finds the
+  URL can fill the 10 GB; watch `du -sh /var/handclips`.
+- Not committed or pushed (this repo has other uncommitted work).
+
+
 ## 2026-10-27
 
 **Local admin dashboard: default notes and automatic approval.**

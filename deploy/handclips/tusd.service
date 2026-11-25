@@ -1,0 +1,21 @@
+[Unit]
+Description=tusd resumable upload server for the FDT clips
+After=network.target
+
+[Service]
+User=tusd
+Group=tusd
+ExecStart=/usr/local/bin/tusd -host 127.0.0.1 -port 1080 \
+  -base-path /handclips/files/ -upload-dir /var/handclips/incoming \
+  -behind-proxy -disable-download -disable-termination \
+  -max-size 209715200 \
+  -hooks-dir /opt/handclips/hooks -hooks-enabled-events pre-create,post-finish
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/handclips
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

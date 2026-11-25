@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+"""tusd pre-create hook for the FDT clip upload (https://sosweb.org/handclips/).
+
+Reads the hook JSON on stdin and refuses an upload that is not a clip of ours:
+  - metadata `filename`: a safe name ending in .mp4 or .json
+  - metadata `player`:   the temporary player id (letters, digits, _ and -)
+  - size: at most MAX_CLIP for .mp4, MAX_JSON for .json
+  - the folder /var/handclips must stay under QUOTA bytes in total (10 GB for now)
+There is no invite token (za, 2026-11-25): these checks and the quota are the only gate.
+"""
+import json
+import os
+import re
+import sys
+
+ROOT = "/var/handclips"
+QUOTA = 10 * 1024 ** 3
+MAX_CLIP = 200 * 1024 ** 2
+MAX_JSON = 1024 ** 2
+
+
+def reject(code, msg):
+    print(json.dumps({"RejectUpload": True, "HTTPResponse": {"StatusCode": code, "Body": msg + "\n", "Header": {"Content-Type": "text/plain"}}}))
+    sys.exit(0)
+
+
+def used(path):
+    total = 0
+    for d, _, fs in os.walk(path):
+        for f in fs:
+            try:
+                total += os.path.getsize(os.path.join(d, f))
+            except OSError:
+                pass
+    return total
+
+
+ev = json.load(sys.stdin).get("Event", {})
+up = ev.get("Upload", {})
+meta = up.get("MetaData") or {}
+name, player, size = meta.get("filename", ""), meta.get("player", ""), int(up.get("Size") or 0)
+if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,120}", name) or not name.endswith((".mp4", ".json")):
+    reject(400, "bad filename")
+if not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", player):
+    reject(400, "bad player id")
+if size <= 0 or size > (MAX_CLIP if name.endswith(".mp4") else MAX_JSON):
+    reject(413, "bad size")
+if used(ROOT) + size > QUOTA:
+    reject(507, "the server is full")
+print("{}")

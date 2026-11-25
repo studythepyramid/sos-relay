@@ -1,0 +1,8 @@
+# Insert inside the sosweb.org site block, before the general static-site handle.
+# FDT clip upload: tusd (resumable uploads) on loopback 1080; /handclips/ping is the app's connection check.
+handle /handclips/ping {
+    respond "ok" 200
+}
+handle /handclips/files/* {
+    reverse_proxy 127.0.0.1:1080
+}
