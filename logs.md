@@ -357,3 +357,20 @@ HTTPS website for full-stack testing.
 
 
 
+
+## Phone to VPS plan — 2026-11-28
+
+**Author: Claude (Anthropic CLI), at za's request.** Wrote
+[phone2vps.md](phone2vps.md): a proposal to use old smartphones as
+small extra servers (Worker, Mirror, Relay roles), reached by a reverse
+tunnel to the main VPS; setup steps, security and questions for za.
+Nothing is built or deployed.
+Added section 11 (storage choice: SQLite is the store, one HTML file only
+as a small read-only export), at za's question.
+Added section 12 (database sync among many phone nodes: grow-only set of
+immutable messages, since-sequence fast path, range-based reconciliation
+for repair, gossip topology, node keys, tests), at za's request.
+Added section 13 (simpler rules, za): delete is a local mark and never
+synced, users choose trusted nodes, size cap about 100K rows, a day-bucket
+repair instead of full set reconciliation for the first version.
+Added section 14 (deferred complexities, each with a sign that it is time).
